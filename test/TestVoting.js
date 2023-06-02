@@ -16,7 +16,7 @@ contract("Voting", accounts => {
 		voting= await Voting.new({from: _owner});
 	});
 
-	it("At first, no voter, no proposal", async () => {
+	it("status : RegisteringVoters, no voter, no proposal", async () => {
 		await expectRevert(
 			voting.getVoter(_owner),
 			"You're not a voter"
@@ -34,7 +34,25 @@ contract("Voting", accounts => {
 			voting.getOneProposal(0),
 			"You're not a voter"
 		);
+		//let status = voting.workflowStatus.call();
+		//console.log( status);
 	});
 
+	it("status : RegisteringVoters, add voter 2 times", async () => {
+		voting.addVoter( _voter1);
+		await expectRevert(
+			voting.addVoter( _voter1),
+			"Already registered"
+		);
+	});
+
+	it("status : RegisteringVoters, test emit for addVoter()", async () => {
+		let receipt = await voting.addVoter( _voter1);
+		expectEvent.inLogs(
+			receipt.logs,
+			"VoterRegistered",
+			{voterAddress: _voter1}
+		);
+	});
 	
 });
