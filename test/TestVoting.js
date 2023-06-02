@@ -38,8 +38,8 @@ contract("Voting", accounts => {
 		//console.log( status);
 	});
 
-	it("status : RegisteringVoters, add voter 2 times", async () => {
-		voting.addVoter( _voter1);
+	it("status : RegisteringVoters, add a voter 2 times", async () => {
+		await voting.addVoter( _voter1);
 		await expectRevert(
 			voting.addVoter( _voter1),
 			"Already registered"
@@ -47,12 +47,21 @@ contract("Voting", accounts => {
 	});
 
 	it("status : RegisteringVoters, test emit for addVoter()", async () => {
+
 		let receipt = await voting.addVoter( _voter1);
+		/*
 		expectEvent.inLogs(
 			receipt.logs,
 			"VoterRegistered",
 			{voterAddress: _voter1}
+		);*/
+
+		expectEvent(
+			receipt,
+			"VoterRegistered",
+			{voterAddress: _voter1}
 		);
+
 	});
-	
+
 });
