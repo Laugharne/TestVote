@@ -9,6 +9,8 @@ contract("Voting", accounts => {
 	const _voter2 = accounts[2];
 	const _voter3 = accounts[3];
 	const _voter4 = accounts[4];
+	const _voter5 = accounts[5];
+	const _fraud6 = accounts[6];
 
 	let voting;
 
@@ -29,16 +31,19 @@ contract("Voting", accounts => {
 			voting.getVoter(_voter2),
 			"You're not a voter"
 		);
+		await expectRevert(
+			voting.getVoter(_fraud6),
+			"You're not a voter"
+		);
 
 		await expectRevert(
 			voting.getOneProposal(0),
 			"You're not a voter"
 		);
-		//let status = voting.workflowStatus.call();
-		//console.log( status);
+
 	});
 
-	it("status : RegisteringVoters, add a voter 2 times", async () => {
+	it("status : RegisteringVoters, attempt to add a voter 2 times", async () => {
 		await voting.addVoter( _voter1);
 		await expectRevert(
 			voting.addVoter( _voter1),
@@ -46,7 +51,7 @@ contract("Voting", accounts => {
 		);
 	});
 
-	it("status : RegisteringVoters, test emit for addVoter()", async () => {
+	it("status : RegisteringVoters, check emit for addVoter()", async () => {
 
 		let receipt = await voting.addVoter( _voter1);
 		/*
@@ -63,5 +68,7 @@ contract("Voting", accounts => {
 		);
 
 	});
+
+
 
 });
