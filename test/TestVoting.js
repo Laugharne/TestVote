@@ -12,13 +12,22 @@ contract("Voting", accounts => {
 	const _voter5 = accounts[5];
 	const _fraud6 = accounts[6];
 
+	const RegisteringVoters            = BN(0);
+	const ProposalsRegistrationStarted = BN(1);
+	const ProposalsRegistrationEnded   = BN(2);
+	const VotingSessionStarted         = BN(3);
+	const VotingSessionEnded           = BN(4);
+	const VotesTallied                 = BN(5);
+
 	let voting;
 
 	beforeEach(async function(){
 		voting= await Voting.new({from: _owner});
 	});
 
-	it("status : RegisteringVoters, no voter, no proposal", async () => {
+	it("status : RegisteringVoters, no voter, no proposal, no result", async () => {
+
+		// Voters
 		await expectRevert(
 			voting.getVoter(_owner),
 			"You're not a voter"
@@ -36,9 +45,16 @@ contract("Voting", accounts => {
 			"You're not a voter"
 		);
 
+		// Proposal
 		await expectRevert(
 			voting.getOneProposal(0),
 			"You're not a voter"
+		);
+
+		// result
+		await expectRevert(
+			voting.tallyVotes(),
+			"Current status is not voting session ended"
 		);
 
 	});
@@ -53,22 +69,97 @@ contract("Voting", accounts => {
 
 	it("status : RegisteringVoters, check emit for addVoter()", async () => {
 
-		let receipt = await voting.addVoter( _voter1);
-		/*
-		expectEvent.inLogs(
-			receipt.logs,
-			"VoterRegistered",
-			{voterAddress: _voter1}
-		);*/
+		//let receipt = await voting.addVoter( _voter1);
 
 		expectEvent(
-			receipt,
+			await voting.addVoter( _voter1),
 			"VoterRegistered",
 			{voterAddress: _voter1}
 		);
 
 	});
 
+	it("onlyOwner : checks functions", async () => {
+		await expectRevert(
+			voting.addVoter( _voter3, {from: _voter1}),
+			"caller is not the owner"
+		);
 
+		await expectRevert(
+			voting.startProposalsRegistering( {from: _voter1}),
+			"caller is not the owner"
+		);
+
+		await expectRevert(
+			voting.endProposalsRegistering( {from: _voter1}),
+			"caller is not the owner"
+		);
+
+		await expectRevert(
+			voting.startVotingSession( {from: _voter1}),
+			"caller is not the owner"
+		);
+
+		await expectRevert(
+			voting.endVotingSession( {from: _voter1}),
+			"caller is not the owner"
+		);
+
+		await expectRevert(
+			voting.tallyVotes( {from: _voter1}),
+			"caller is not the owner"
+		);
+
+	});
+
+	it("status evolution : checks", async () => {
+
+		expectEvent(
+			await voting.startProposalsRegistering(),
+			"WorkflowStatusChange",
+			{
+				previousStatus: RegisteringVoters,
+				newStatus     : ProposalsRegistrationStarted,
+			}
+		);
+
+		expectEvent(
+			await voting.endProposalsRegistering(),
+			"WorkflowStatusChange",
+			{
+				previousStatus: ProposalsRegistrationStarted,
+				newStatus     : ProposalsRegistrationEnded,
+			}
+		);
+
+		expectEvent(
+			await voting.startVotingSession(),
+			"WorkflowStatusChange",
+			{
+				previousStatus: ProposalsRegistrationEnded,
+				newStatus     : VotingSessionStarted,
+			}
+		);
+
+		expectEvent(
+			await voting.endVotingSession(),
+			"WorkflowStatusChange",
+			{
+				previousStatus: VotingSessionStarted,
+				newStatus     : VotingSessionEnded,
+			}
+		);
+
+		expectEvent(
+			await voting.tallyVotes(),
+			"WorkflowStatusChange",
+			{
+				previousStatus: VotingSessionEnded,
+				newStatus     : VotesTallied,
+			}
+		);
+
+
+	});
 
 });
