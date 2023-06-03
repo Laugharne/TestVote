@@ -152,7 +152,7 @@ contract("Voting", accounts => {
 
 	});
 
-	it("voters : TO DO", async () => {
+	it("voters : check emit & revert for addVoter()", async () => {
 
 		expectEvent(
 			await voting.addVoter( _voter1),
@@ -209,6 +209,12 @@ contract("Voting", accounts => {
 			voting.addProposal( voidString, {from: _voter1}),
 			"Vous ne pouvez pas ne rien proposer"
 		);
+
+		// TODO
+
+	});
+
+	it("vote : TO DO", async () => {
 
 		// TODO
 
