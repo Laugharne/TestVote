@@ -69,8 +69,6 @@ contract("Voting", accounts => {
 
 	it("status : RegisteringVoters, check emit for addVoter()", async () => {
 
-		//let receipt = await voting.addVoter( _voter1);
-
 		expectEvent(
 			await voting.addVoter( _voter1),
 			"VoterRegistered",
@@ -159,6 +157,27 @@ contract("Voting", accounts => {
 			}
 		);
 
+		// revert order for status evolution, now
+
+		await expectRevert(
+			voting.endVotingSession(),
+			"Voting session havent started yet"
+		);
+
+		await expectRevert(
+			voting.startVotingSession(),
+			"Registering proposals phase is not finished"
+		);
+
+		await expectRevert(
+			voting.endProposalsRegistering(),
+			"Registering proposals havent started yet"
+		);
+
+		await expectRevert(
+			voting.startProposalsRegistering(),
+			"Registering proposals cant be started now"
+		);
 
 	});
 
