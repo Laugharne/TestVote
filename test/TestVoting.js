@@ -4,6 +4,7 @@ const { expect } = require('chai');
 
 
 contract("Voting", accounts => {
+
 	const _owner  = accounts[0];
 	const _voter1 = accounts[1];
 	const _voter2 = accounts[2];
@@ -24,6 +25,7 @@ contract("Voting", accounts => {
 	beforeEach(async function(){
 		voting= await Voting.new({from: _owner});
 	});
+
 
 	it("status : RegisteringVoters, no voter, no proposal, no result", async () => {
 
@@ -179,6 +181,10 @@ contract("Voting", accounts => {
 			"Registering proposals cant be started now"
 		);
 
+	});
+
+	it("voter : checks", async () => {
+		// TODO
 	});
 
 });
