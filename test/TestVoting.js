@@ -27,7 +27,7 @@ contract("Voting", accounts => {
 	});
 
 
-	it("status : RegisteringVoters, no voter, no proposal, no result", async () => {
+	it("deployed : no voter, no proposal, no result", async () => {
 
 		// Voters
 		await expectRevert(
@@ -61,15 +61,7 @@ contract("Voting", accounts => {
 
 	});
 
-	it("status : RegisteringVoters, attempt to add a voter 2 times", async () => {
-		await voting.addVoter( _voter1);
-		await expectRevert(
-			voting.addVoter( _voter1),
-			"Already registered"
-		);
-	});
-
-	it("status : RegisteringVoters, check emit for addVoter()", async () => {
+	it("deployed : check emit for addVoter()", async () => {
 
 		expectEvent(
 			await voting.addVoter( _voter1),
@@ -77,6 +69,14 @@ contract("Voting", accounts => {
 			{voterAddress: _voter1}
 		);
 
+	});
+
+	it("deployed : attempt to add a voter 2 times", async () => {
+		await voting.addVoter( _voter1);
+		await expectRevert(
+			voting.addVoter( _voter1),
+			"Already registered"
+		);
 	});
 
 	it("onlyOwner : checks functions", async () => {
@@ -183,8 +183,56 @@ contract("Voting", accounts => {
 
 	});
 
-	it("voter : checks", async () => {
+	it("voters : TO DO", async () => {
 		// TODO
+	});
+
+	it("proposals : check emit & revert for addProposal()", async () => {
+
+		expectEvent(
+			await voting.addVoter( _voter1),
+			"VoterRegistered",
+			{voterAddress: _voter1}
+		);
+
+		const proposal1  = "proposal 1, from voter 1";
+		const proposal2  = "proposal 2, from voter 1";
+		const proposal3  = "proposal 3, from voter 1";
+		const voidString = "";
+
+		await expectRevert(
+			voting.addProposal( proposal1, {from: _voter1}),
+			"Proposals are not allowed yet"
+		);
+
+		expectEvent(
+			await voting.startProposalsRegistering(),
+			"WorkflowStatusChange",
+			{
+				previousStatus: RegisteringVoters,
+				newStatus     : ProposalsRegistrationStarted,
+			}
+		);
+
+		expectEvent(
+			await voting.addProposal( proposal1, {from: _voter1}),
+			"ProposalRegistered",
+			{proposalId: BN(1)}
+		);
+
+		expectEvent(
+			await voting.addProposal( proposal1, {from: _voter1}),
+			"ProposalRegistered",
+			{proposalId: BN(2)}
+		);
+
+		await expectRevert(
+			voting.addProposal( voidString, {from: _voter1}),
+			"Vous ne pouvez pas ne rien proposer"
+		);
+
+		// TODO
+
 	});
 
 });
