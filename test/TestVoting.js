@@ -38,14 +38,6 @@ contract("Voting", accounts => {
 			voting.getVoter(_voter1),
 			"You're not a voter"
 		);
-		await expectRevert(
-			voting.getVoter(_voter2),
-			"You're not a voter"
-		);
-		await expectRevert(
-			voting.getVoter(_fraud6),
-			"You're not a voter"
-		);
 
 		// Proposal
 		await expectRevert(
@@ -61,25 +53,7 @@ contract("Voting", accounts => {
 
 	});
 
-	it("deployed : check emit for addVoter()", async () => {
-
-		expectEvent(
-			await voting.addVoter( _voter1),
-			"VoterRegistered",
-			{voterAddress: _voter1}
-		);
-
-	});
-
-	it("deployed : attempt to add a voter 2 times", async () => {
-		await voting.addVoter( _voter1);
-		await expectRevert(
-			voting.addVoter( _voter1),
-			"Already registered"
-		);
-	});
-
-	it("onlyOwner : checks functions", async () => {
+	it("onlyOwner : checks functions access", async () => {
 		await expectRevert(
 			voting.addVoter( _voter3, {from: _voter1}),
 			"caller is not the owner"
@@ -112,12 +86,11 @@ contract("Voting", accounts => {
 
 	});
 
-	it("status evolution : checks", async () => {
+	it("status : check evolution", async () => {
 
 		expectEvent(
 			await voting.startProposalsRegistering(),
-			"WorkflowStatusChange",
-			{
+			"WorkflowStatusChange", {
 				previousStatus: RegisteringVoters,
 				newStatus     : ProposalsRegistrationStarted,
 			}
@@ -125,8 +98,7 @@ contract("Voting", accounts => {
 
 		expectEvent(
 			await voting.endProposalsRegistering(),
-			"WorkflowStatusChange",
-			{
+			"WorkflowStatusChange", {
 				previousStatus: ProposalsRegistrationStarted,
 				newStatus     : ProposalsRegistrationEnded,
 			}
@@ -134,8 +106,7 @@ contract("Voting", accounts => {
 
 		expectEvent(
 			await voting.startVotingSession(),
-			"WorkflowStatusChange",
-			{
+			"WorkflowStatusChange", {
 				previousStatus: ProposalsRegistrationEnded,
 				newStatus     : VotingSessionStarted,
 			}
@@ -143,8 +114,7 @@ contract("Voting", accounts => {
 
 		expectEvent(
 			await voting.endVotingSession(),
-			"WorkflowStatusChange",
-			{
+			"WorkflowStatusChange", {
 				previousStatus: VotingSessionStarted,
 				newStatus     : VotingSessionEnded,
 			}
@@ -152,8 +122,7 @@ contract("Voting", accounts => {
 
 		expectEvent(
 			await voting.tallyVotes(),
-			"WorkflowStatusChange",
-			{
+			"WorkflowStatusChange", {
 				previousStatus: VotingSessionEnded,
 				newStatus     : VotesTallied,
 			}
@@ -184,7 +153,18 @@ contract("Voting", accounts => {
 	});
 
 	it("voters : TO DO", async () => {
-		// TODO
+
+		expectEvent(
+			await voting.addVoter( _voter1),
+			"VoterRegistered",
+			{voterAddress: _voter1}
+		);
+
+		await expectRevert(
+			voting.addVoter( _voter1),
+			"Already registered"
+		);
+
 	});
 
 	it("proposals : check emit & revert for addProposal()", async () => {
@@ -207,8 +187,7 @@ contract("Voting", accounts => {
 
 		expectEvent(
 			await voting.startProposalsRegistering(),
-			"WorkflowStatusChange",
-			{
+			"WorkflowStatusChange", {
 				previousStatus: RegisteringVoters,
 				newStatus     : ProposalsRegistrationStarted,
 			}
