@@ -35,6 +35,7 @@ contract("Voting", accounts => {
 			voting.getVoter(_owner),
 			"You're not a voter"
 		);
+
 		await expectRevert(
 			voting.getVoter(_voter1),
 			"You're not a voter"
@@ -254,10 +255,136 @@ contract("Voting", accounts => {
 	});
 
 
-	it("vote : TO DO", async () => {
+	it("vote : onlyVoters & check proposal vote processing", async () => {
 
-		// TODO
+		const proposal1  = "proposal 1";
+		const proposal2  = "proposal 2";
+
+		// Add voter1 (the only one voter registered, no voter2 registered)
+		expectEvent(
+			await voting.addVoter( _voter1),
+			"VoterRegistered",
+			{voterAddress: _voter1}
+		);
+
+		await assertVoterAndProposal( voting, _voter1, _voter2, false, false);
+
+
+		// Registration start
+		// ------------------
+		expectEvent(
+			await voting.startProposalsRegistering(),
+			"WorkflowStatusChange", {
+				previousStatus: RegisteringVoters,
+				newStatus     : ProposalsRegistrationStarted,
+			}
+		);
+
+		await assertVoterAndProposal( voting, _voter1, _voter2, false, false);
+
+		// voter1 attempt to propose with success
+		// there' is now one proposal
+		expectEvent(
+			await voting.addProposal( proposal1, {from: _voter1}),
+			"ProposalRegistered",
+			{proposalId: BN(1)}
+		);
+
+		// voter2 attempt to propose, and fail
+		await expectRevert(
+			voting.addProposal( proposal2, {from: _voter2}),
+			"You're not a voter"
+		);
+
+		await assertVoterAndProposal( voting, _voter1, _voter2, true, false);
+
+
+		// Registration stop
+		// -----------------
+		expectEvent(
+			await voting.endProposalsRegistering(),
+			"WorkflowStatusChange", {
+				previousStatus: ProposalsRegistrationStarted,
+				newStatus     : ProposalsRegistrationEnded,
+			}
+		);
+
+		await assertVoterAndProposal( voting, _voter1, _voter2, true, false);
+
+
+		// voting start
+		// ------------
+		expectEvent(
+			await voting.startVotingSession(),
+			"WorkflowStatusChange", {
+				previousStatus: ProposalsRegistrationEnded,
+				newStatus     : VotingSessionStarted,
+			}
+		);
+
+		await assertVoterAndProposal( voting, _voter1, _voter2, true, false);
+///
+		expectEvent(
+			await voting.setVote( BN(1), {from: _voter1}),
+			"Voted", {
+				voter: _voter1,
+				proposalId: BN(1)
+			}
+		);
+
+		// voter2 attempt to vote, and fail
+		await expectRevert(
+			voting.setVote( BN(1), {from: _voter2}),
+			"You're not a voter"
+		);
+///
+
+
+		// voting stop
+		// -----------
+		expectEvent(
+			await voting.endVotingSession(),
+			"WorkflowStatusChange", {
+				previousStatus: VotingSessionStarted,
+				newStatus     : VotingSessionEnded,
+			}
+		);
+
+		await assertVoterAndProposal( voting, _voter1, _voter2, true, true);
+
 
 	});
 
 });
+
+
+async function assertVoterAndProposal( voting, _voter1, _voter2, hasProposal, hasVoted) {
+
+	voterStruct = await voting.getVoter(_voter1, {from: _voter1});
+	assert.equal(voterStruct.isRegistered,    true,  "Not registered");
+	if( hasVoted == false) {
+		assert.equal(voterStruct.votedProposalId, BN(0), "Not the good ID (0)");
+		assert.equal(voterStruct.hasVoted,        false, "Still voted");
+	} else {
+		assert.equal(voterStruct.votedProposalId, BN(1), "Not the good ID (1)");
+	}
+
+	// Attempt to add voter2, it's fail
+	await expectRevert(
+		voting.getVoter( _voter1, {from: _voter2}),
+		"You're not a voter"
+	);
+
+	await expectRevert(
+		voting.getOneProposal(0, {from: _voter2}),
+		"You're not a voter"
+	);
+
+	if( hasProposal == false) return;
+	let proposalStruct = await voting.getOneProposal(0, {from: _voter1});
+	assert.equal(proposalStruct.description, "GENESIS",  "Not GENESIS proposal");
+
+	proposalStruct = await voting.getOneProposal(1, {from: _voter1});
+	assert.equal(proposalStruct.description, "proposal 1",  "Not proposal 1");
+
+}
