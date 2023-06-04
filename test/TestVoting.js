@@ -22,6 +22,7 @@ contract("Voting", accounts => {
 
 	let voting;
 
+
 	beforeEach(async function(){
 		voting= await Voting.new({from: _owner});
 	});
@@ -52,6 +53,7 @@ contract("Voting", accounts => {
 		);
 
 	});
+
 
 	it("onlyOwner : checks functions access", async () => {
 		await expectRevert(
@@ -85,6 +87,7 @@ contract("Voting", accounts => {
 		);
 
 	});
+
 
 	it("status : check evolution", async () => {
 
@@ -150,41 +153,37 @@ contract("Voting", accounts => {
 			"Registering proposals cant be started now"
 		);
 
+		await expectRevert(
+			voting.tallyVotes(),
+			"Current status is not voting session ended"
+		);
+
 	});
+
 
 	it("voters : check emit & revert for addVoter()", async () => {
 
+		// Add voter1
 		expectEvent(
 			await voting.addVoter( _voter1),
 			"VoterRegistered",
 			{voterAddress: _voter1}
 		);
 
+		// Add voter2
+		expectEvent(
+			await voting.addVoter( _voter2),
+			"VoterRegistered",
+			{voterAddress: _voter2}
+		);
+
+		// Attempt to add voter1 again, it's fail
 		await expectRevert(
 			voting.addVoter( _voter1),
 			"Already registered"
 		);
 
-	});
-
-	it("proposals : check emit & revert for addProposal()", async () => {
-
-		expectEvent(
-			await voting.addVoter( _voter1),
-			"VoterRegistered",
-			{voterAddress: _voter1}
-		);
-
-		const proposal1  = "proposal 1, from voter 1";
-		const proposal2  = "proposal 2, from voter 1";
-		const proposal3  = "proposal 3, from voter 1";
-		const voidString = "";
-
-		await expectRevert(
-			voting.addProposal( proposal1, {from: _voter1}),
-			"Proposals are not allowed yet"
-		);
-
+		// Time to propose now
 		expectEvent(
 			await voting.startProposalsRegistering(),
 			"WorkflowStatusChange", {
@@ -193,26 +192,67 @@ contract("Voting", accounts => {
 			}
 		);
 
+		// Attempt to add voter3, it's fail
+		await expectRevert(
+			voting.addVoter( _voter3),
+			"Voters registration is not open yet"
+		);
+
+	});
+
+
+	it("proposals : check emit & revert for addProposal()", async () => {
+
+		const proposal1  = "proposal 1, from voter 1";
+		const proposal2  = "proposal 2, from voter 1";
+		const voidString = "";
+
+		// Add voter1
+		expectEvent(
+			await voting.addVoter( _voter1),
+			"VoterRegistered",
+			{voterAddress: _voter1}
+		);
+
+		// voter1 attempt to propose, and fail
+		await expectRevert(
+			voting.addProposal( proposal1, {from: _voter1}),
+			"Proposals are not allowed yet"
+		);
+
+		// Registration start now
+		expectEvent(
+			await voting.startProposalsRegistering(),
+			"WorkflowStatusChange", {
+				previousStatus: RegisteringVoters,
+				newStatus     : ProposalsRegistrationStarted,
+			}
+		);
+
+		// voter1 attempt to propose with success
+		// there' is now one proposal
 		expectEvent(
 			await voting.addProposal( proposal1, {from: _voter1}),
 			"ProposalRegistered",
 			{proposalId: BN(1)}
 		);
 
+		// voter1 attempt to propose with success
+		// there' is now two proposal
 		expectEvent(
-			await voting.addProposal( proposal1, {from: _voter1}),
+			await voting.addProposal( proposal2, {from: _voter1}),
 			"ProposalRegistered",
 			{proposalId: BN(2)}
 		);
 
+		// voter1 attempt to propose a void string, and fail
 		await expectRevert(
 			voting.addProposal( voidString, {from: _voter1}),
 			"Vous ne pouvez pas ne rien proposer"
 		);
 
-		// TODO
-
 	});
+
 
 	it("vote : TO DO", async () => {
 
