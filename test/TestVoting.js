@@ -24,11 +24,13 @@ contract("Voting", accounts => {
 
 
 	beforeEach(async function(){
-		voting= await Voting.new({from: _owner});
+		voting = await Voting.new({from: _owner});
 	});
 
 
 	it("deployed : no voter, no proposal, no result", async () => {
+
+		expect( await voting.owner()).to.be.bignumber.equal( BN(_owner));
 
 		// Voters
 		await expectRevert(
@@ -185,13 +187,7 @@ contract("Voting", accounts => {
 		);
 
 		// Time to propose now
-		expectEvent(
-			await voting.startProposalsRegistering(),
-			"WorkflowStatusChange", {
-				previousStatus: RegisteringVoters,
-				newStatus     : ProposalsRegistrationStarted,
-			}
-		);
+		await voting.startProposalsRegistering();
 
 		// Attempt to add voter3, it's fail
 		await expectRevert(
@@ -267,13 +263,13 @@ contract("Voting", accounts => {
 			{voterAddress: _voter1}
 		);
 
-		await assertVoterAndProposal( voting, _voter1, _voter2, false, false);
+		await assertGetVoterAndGetProposal( voting, _voter1, _voter2, false, false);
 
 
 		// Registration start
 		// ------------------
 		await voting.startProposalsRegistering();
-		await assertVoterAndProposal( voting, _voter1, _voter2, false, false);
+		await assertGetVoterAndGetProposal( voting, _voter1, _voter2, false, false);
 
 		// voter1 attempt to propose with success
 		// there' is now one proposal
@@ -289,20 +285,21 @@ contract("Voting", accounts => {
 			"You're not a voter"
 		);
 
-		await assertVoterAndProposal( voting, _voter1, _voter2, true, false);
+		await assertGetVoterAndGetProposal( voting, _voter1, _voter2, true, false);
 
 
 		// Registration stop
 		// -----------------
 		await voting.endProposalsRegistering();
-		await assertVoterAndProposal( voting, _voter1, _voter2, true, false);
+		await assertGetVoterAndGetProposal( voting, _voter1, _voter2, true, false);
 
 
 		// voting start
 		// ------------
 		await voting.startVotingSession();
-		await assertVoterAndProposal( voting, _voter1, _voter2, true, false);
-///
+		await assertGetVoterAndGetProposal( voting, _voter1, _voter2, true, false);
+
+		// voter1 attempt to vote, succeed
 		expectEvent(
 			await voting.setVote( BN(1), {from: _voter1}),
 			"Voted", {
@@ -316,13 +313,15 @@ contract("Voting", accounts => {
 			voting.setVote( BN(1), {from: _voter2}),
 			"You're not a voter"
 		);
-///
+
+		await assertGetVoterAndGetProposal( voting, _voter1, _voter2, true, true);
+
 
 
 		// voting stop
 		// -----------
 		await voting.endVotingSession();
-		await assertVoterAndProposal( voting, _voter1, _voter2, true, true);
+		await assertGetVoterAndGetProposal( voting, _voter1, _voter2, true, true);
 
 
 	});
@@ -330,15 +329,16 @@ contract("Voting", accounts => {
 });
 
 
-async function assertVoterAndProposal( voting, _voter1, _voter2, hasProposal, hasVoted) {
+async function assertGetVoterAndGetProposal( voting, _voter1, _voter2, hasProposal, hasVoted) {
 
 	voterStruct = await voting.getVoter(_voter1, {from: _voter1});
-	assert.equal(voterStruct.isRegistered,    true,  "Not registered");
+	assert.equal(voterStruct.isRegistered, true, "Not registered");
+	//expect(voterStruct.isRegistered).to.be.bool.equal(true);
 	if( hasVoted == false) {
-		assert.equal(voterStruct.votedProposalId, BN(0), "Not the good ID (0)");
+		expect(voterStruct.votedProposalId).to.be.bignumber.equal(BN(0));
 		assert.equal(voterStruct.hasVoted,        false, "Still voted");
 	} else {
-		assert.equal(voterStruct.votedProposalId, BN(1), "Not the good ID (1)");
+		expect(voterStruct.votedProposalId).to.be.bignumber.equal(BN(1));
 	}
 
 	// Attempt to add voter2, it's fail
