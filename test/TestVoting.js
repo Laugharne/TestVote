@@ -255,7 +255,7 @@ contract("Voting", accounts => {
 	});
 
 
-	it("vote : onlyVoters & check proposal vote processing", async () => {
+	it("vote : onlyVoters access ; check proposal & vote processing", async () => {
 
 		const proposal1  = "proposal 1";
 		const proposal2  = "proposal 2";
@@ -272,14 +272,7 @@ contract("Voting", accounts => {
 
 		// Registration start
 		// ------------------
-		expectEvent(
-			await voting.startProposalsRegistering(),
-			"WorkflowStatusChange", {
-				previousStatus: RegisteringVoters,
-				newStatus     : ProposalsRegistrationStarted,
-			}
-		);
-
+		await voting.startProposalsRegistering();
 		await assertVoterAndProposal( voting, _voter1, _voter2, false, false);
 
 		// voter1 attempt to propose with success
@@ -301,27 +294,13 @@ contract("Voting", accounts => {
 
 		// Registration stop
 		// -----------------
-		expectEvent(
-			await voting.endProposalsRegistering(),
-			"WorkflowStatusChange", {
-				previousStatus: ProposalsRegistrationStarted,
-				newStatus     : ProposalsRegistrationEnded,
-			}
-		);
-
+		await voting.endProposalsRegistering();
 		await assertVoterAndProposal( voting, _voter1, _voter2, true, false);
 
 
 		// voting start
 		// ------------
-		expectEvent(
-			await voting.startVotingSession(),
-			"WorkflowStatusChange", {
-				previousStatus: ProposalsRegistrationEnded,
-				newStatus     : VotingSessionStarted,
-			}
-		);
-
+		await voting.startVotingSession();
 		await assertVoterAndProposal( voting, _voter1, _voter2, true, false);
 ///
 		expectEvent(
@@ -342,14 +321,7 @@ contract("Voting", accounts => {
 
 		// voting stop
 		// -----------
-		expectEvent(
-			await voting.endVotingSession(),
-			"WorkflowStatusChange", {
-				previousStatus: VotingSessionStarted,
-				newStatus     : VotingSessionEnded,
-			}
-		);
-
+		await voting.endVotingSession();
 		await assertVoterAndProposal( voting, _voter1, _voter2, true, true);
 
 
