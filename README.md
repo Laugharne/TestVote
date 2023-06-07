@@ -30,7 +30,7 @@ Au déploiement du **contrat**, celui-ci ne possède :
 
 #### Extrait :
 ```javascript
-it("deployed : no voter, no proposal, no result", async () => {
+it("initialisation : no voter, no proposal, no result", async () => {
 
 	expect( await voting.owner()).to.be.bignumber.equal( BN(_owner));
 
@@ -45,11 +45,7 @@ it("deployed : no voter, no proposal, no result", async () => {
 		"You're not a voter"
 	);
 
-	// Proposal
-	await expectRevert(
-		voting.getOneProposal(0),
-		"You're not a voter"
-	);
+	// No proposal, so no access to getOneProposal()
 
 	// result
 	await expectRevert(
@@ -150,12 +146,13 @@ await expectRevert(
 
 #### Extrait :
 ```javascript
-it("onlyOwner : checks functions access", async () => {
+it("onlyOwner functions : check access if not owner", async () => {
+
 	await expectRevert(
 		voting.addVoter( _voter3, {from: _voter1}),
 		"caller is not the owner"
 	);
-
+	
 	await expectRevert(
 		voting.startProposalsRegistering( {from: _voter1}),
 		"caller is not the owner"

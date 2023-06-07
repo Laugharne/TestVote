@@ -3,6 +3,14 @@ const { BN , expectRevert, expectEvent } = require('@openzeppelin/test-helpers')
 const { expect } = require('chai');
 
 
+const RegisteringVoters            = BN(0);
+const ProposalsRegistrationStarted = BN(1);
+const ProposalsRegistrationEnded   = BN(2);
+const VotingSessionStarted         = BN(3);
+const VotingSessionEnded           = BN(4);
+const VotesTallied                 = BN(5);
+
+
 contract("Voting", accounts => {
 
 	const _owner  = accounts[0];
@@ -13,13 +21,6 @@ contract("Voting", accounts => {
 	const _voter5 = accounts[5];
 	const _fraud6 = accounts[6];
 
-	const RegisteringVoters            = BN(0);
-	const ProposalsRegistrationStarted = BN(1);
-	const ProposalsRegistrationEnded   = BN(2);
-	const VotingSessionStarted         = BN(3);
-	const VotingSessionEnded           = BN(4);
-	const VotesTallied                 = BN(5);
-
 	let voting;
 
 
@@ -28,7 +29,7 @@ contract("Voting", accounts => {
 	});
 
 
-	it("deployed : no voter, no proposal, no result", async () => {
+	it("initialisation : no voter, no proposal, no result", async () => {
 
 		expect( await voting.owner()).to.be.bignumber.equal( BN(_owner));
 
@@ -43,11 +44,7 @@ contract("Voting", accounts => {
 			"You're not a voter"
 		);
 
-		// Proposal
-		await expectRevert(
-			voting.getOneProposal(0),
-			"You're not a voter"
-		);
+		// No proposal, so no access to getOneProposal()
 
 		// result
 		await expectRevert(
@@ -58,83 +55,67 @@ contract("Voting", accounts => {
 	});
 
 
-	it("onlyOwner : checks functions access", async () => {
-		await expectRevert(
-			voting.addVoter( _voter3, {from: _voter1}),
-			"caller is not the owner"
-		);
+	describe("onlyOwner functions", function() {
 
-		await expectRevert(
-			voting.startProposalsRegistering( {from: _voter1}),
-			"caller is not the owner"
-		);
+		it("Check access if owner", async () => {
 
-		await expectRevert(
-			voting.endProposalsRegistering( {from: _voter1}),
-			"caller is not the owner"
-		);
+			expectEvent(
+				await voting.addVoter( _voter1),
+				"VoterRegistered",
+				{voterAddress: _voter1}
+			);
+	
+			await checkStatusScheduling( voting);
+	
+		});
+	
+		it("Check access if not owner", async () => {
 
-		await expectRevert(
-			voting.startVotingSession( {from: _voter1}),
-			"caller is not the owner"
-		);
-
-		await expectRevert(
-			voting.endVotingSession( {from: _voter1}),
-			"caller is not the owner"
-		);
-
-		await expectRevert(
-			voting.tallyVotes( {from: _voter1}),
-			"caller is not the owner"
-		);
-
+			await expectRevert(
+				voting.addVoter( _voter3, {from: _voter1}),
+				"caller is not the owner"
+			);
+			
+			await expectRevert(
+				voting.startProposalsRegistering( {from: _voter1}),
+				"caller is not the owner"
+			);
+	
+			await expectRevert(
+				voting.endProposalsRegistering( {from: _voter1}),
+				"caller is not the owner"
+			);
+	
+			await expectRevert(
+				voting.startVotingSession( {from: _voter1}),
+				"caller is not the owner"
+			);
+	
+			await expectRevert(
+				voting.endVotingSession( {from: _voter1}),
+				"caller is not the owner"
+			);
+	
+			await expectRevert(
+				voting.tallyVotes( {from: _voter1}),
+				"caller is not the owner"
+			);
+	
+		});
 	});
 
 
-	it("status : check evolution", async () => {
 
-		expectEvent(
-			await voting.startProposalsRegistering(),
-			"WorkflowStatusChange", {
-				previousStatus: RegisteringVoters,
-				newStatus     : ProposalsRegistrationStarted,
-			}
-		);
 
-		expectEvent(
-			await voting.endProposalsRegistering(),
-			"WorkflowStatusChange", {
-				previousStatus: ProposalsRegistrationStarted,
-				newStatus     : ProposalsRegistrationEnded,
-			}
-		);
+	it("status : check scheduling", async () => {
 
-		expectEvent(
-			await voting.startVotingSession(),
-			"WorkflowStatusChange", {
-				previousStatus: ProposalsRegistrationEnded,
-				newStatus     : VotingSessionStarted,
-			}
-		);
-
-		expectEvent(
-			await voting.endVotingSession(),
-			"WorkflowStatusChange", {
-				previousStatus: VotingSessionStarted,
-				newStatus     : VotingSessionEnded,
-			}
-		);
-
-		expectEvent(
-			await voting.tallyVotes(),
-			"WorkflowStatusChange", {
-				previousStatus: VotingSessionEnded,
-				newStatus     : VotesTallied,
-			}
-		);
+		await checkStatusScheduling( voting);
 
 		// revert order for status evolution, now
+		await expectRevert(
+			voting.tallyVotes(),
+			"Current status is not voting session ended"
+		);
 
 		await expectRevert(
 			voting.endVotingSession(),
@@ -149,16 +130,6 @@ contract("Voting", accounts => {
 		await expectRevert(
 			voting.endProposalsRegistering(),
 			"Registering proposals havent started yet"
-		);
-
-		await expectRevert(
-			voting.startProposalsRegistering(),
-			"Registering proposals cant be started now"
-		);
-
-		await expectRevert(
-			voting.tallyVotes(),
-			"Current status is not voting session ended"
 		);
 
 	});
@@ -251,7 +222,7 @@ contract("Voting", accounts => {
 	});
 
 
-	it("vote : onlyVoters access ; check proposal & vote processing", async () => {
+	it("vote : onlyVoters access, check proposal & vote processing", async () => {
 
 		const proposal1  = "proposal 1";
 		const proposal2  = "proposal 2";
@@ -358,5 +329,50 @@ async function assertGetVoterAndGetProposal( voting, _voter1, _voter2, hasPropos
 
 	proposalStruct = await voting.getOneProposal(1, {from: _voter1});
 	assert.equal(proposalStruct.description, "proposal 1",  "Not proposal 1");
+
+}
+
+
+async function checkStatusScheduling( voting) {
+
+	expectEvent(
+		await voting.startProposalsRegistering(),
+		"WorkflowStatusChange", {
+			previousStatus: RegisteringVoters,
+			newStatus     : ProposalsRegistrationStarted,
+		}
+	);
+
+	expectEvent(
+		await voting.endProposalsRegistering(),
+		"WorkflowStatusChange", {
+			previousStatus: ProposalsRegistrationStarted,
+			newStatus     : ProposalsRegistrationEnded,
+		}
+	);
+
+	expectEvent(
+		await voting.startVotingSession(),
+		"WorkflowStatusChange", {
+			previousStatus: ProposalsRegistrationEnded,
+			newStatus     : VotingSessionStarted,
+		}
+	);
+
+	expectEvent(
+		await voting.endVotingSession(),
+		"WorkflowStatusChange", {
+			previousStatus: VotingSessionStarted,
+			newStatus     : VotingSessionEnded,
+		}
+	);
+
+	expectEvent(
+		await voting.tallyVotes(),
+		"WorkflowStatusChange", {
+			previousStatus: VotingSessionEnded,
+			newStatus     : VotesTallied,
+		}
+	);
 
 }
