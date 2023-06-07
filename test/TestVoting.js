@@ -46,14 +46,18 @@ contract("Voting", accounts => {
 				"You're not a voter"
 			);
 	
-			// No voter, so no access to getOneProposal()
+			// No registered voter, so no access to getOneProposal()
+			await expectRevert(
+				voting.getOneProposal(0, {from: _voter1}),
+				"You're not a voter"
+			);
 	
 			// result
 			await expectRevert(
 				voting.tallyVotes(),
 				"Current status is not voting session ended"
 			);
-	
+				
 		});
 
 	});
@@ -228,7 +232,7 @@ contract("Voting", accounts => {
 	
 		});
 
-		it("onlyVoters access, check proposal & vote processing", async () => {
+		it("Full onlyVoters check access, check proposal & vote processing", async () => {
 
 			const proposal1  = "proposal 1";
 			const proposal2  = "proposal 2";
@@ -240,13 +244,13 @@ contract("Voting", accounts => {
 				{voterAddress: _voter1}
 			);
 	
-			await assertGetVoterAndGetProposal( voting, _voter1, _voter2, false, false);
+			await checkGetVoterAndGetProposal( voting, _voter1, _voter2, false, false);
 	
 	
 			// Registration start
 			// ------------------
 			await voting.startProposalsRegistering();
-			await assertGetVoterAndGetProposal( voting, _voter1, _voter2, false, false);
+			await checkGetVoterAndGetProposal( voting, _voter1, _voter2, false, false);
 	
 			// voter1 attempt to propose with success
 			// there' is now one proposal
@@ -262,21 +266,21 @@ contract("Voting", accounts => {
 				"You're not a voter"
 			);
 	
-			await assertGetVoterAndGetProposal( voting, _voter1, _voter2, true, false);
+			await checkGetVoterAndGetProposal( voting, _voter1, _voter2, true, false);
 	
 	
 			// Registration stop
 			// -----------------
 			await voting.endProposalsRegistering();
-			await assertGetVoterAndGetProposal( voting, _voter1, _voter2, true, false);
+			await checkGetVoterAndGetProposal( voting, _voter1, _voter2, true, false);
 	
 	
-			// voting start
+			// Voting start
 			// ------------
 			await voting.startVotingSession();
-			await assertGetVoterAndGetProposal( voting, _voter1, _voter2, true, false);
+			await checkGetVoterAndGetProposal( voting, _voter1, _voter2, true, false);
 	
-			// voter1 attempt to vote, succeed
+			// voter1 attempt to votefor proposition #1, succeed
 			expectEvent(
 				await voting.setVote( BN(1), {from: _voter1}),
 				"Voted", {
@@ -291,14 +295,13 @@ contract("Voting", accounts => {
 				"You're not a voter"
 			);
 	
-			await assertGetVoterAndGetProposal( voting, _voter1, _voter2, true, true);
+			await checkGetVoterAndGetProposal( voting, _voter1, _voter2, true, true);
 	
 	
-	
-			// voting stop
+			// Voting stop
 			// -----------
 			await voting.endVotingSession();
-			await assertGetVoterAndGetProposal( voting, _voter1, _voter2, true, true);
+			await checkGetVoterAndGetProposal( voting, _voter1, _voter2, true, true);
 	
 			// TODO
 	
@@ -309,16 +312,31 @@ contract("Voting", accounts => {
 });
 
 
-async function assertGetVoterAndGetProposal( voting, _voter1, _voter2, hasProposal, hasVoted) {
+/**
+ * Multi purpose function to check emit + revert of getVoter() & getOneProposal()
+ * with differents contexts :
+ *     - we have a proposal available
+ *     - voter #1 has allready voted for proposal #1
+ * 
+ * @param {*} voting 
+ * @param {*} _voter1 
+ * @param {*} _voter2 
+ * @param bool hasProposal  expect to have at least, one voter proposal available and the GENESIS proposal
+ * @param bool hasVoted  expect to have at least one registered voter available
+ * @returns 
+ */
+async function checkGetVoterAndGetProposal( voting, _voter1, _voter2, hasProposal, hasVoted) {
 
 	voterStruct = await voting.getVoter(_voter1, {from: _voter1});
 	assert.equal(voterStruct.isRegistered, true, "Not registered");
 	//expect(voterStruct.isRegistered).to.be.bool.equal(true);
 	if( hasVoted == false) {
 		expect(voterStruct.votedProposalId).to.be.bignumber.equal(BN(0));
-		assert.equal(voterStruct.hasVoted,        false, "Still voted");
+		assert.equal(voterStruct.hasVoted, false, "Already voted");
 	} else {
 		expect(voterStruct.votedProposalId).to.be.bignumber.equal(BN(1));
+		let proposalStruct = await voting.getOneProposal(1, {from: _voter1});
+		expect(proposalStruct.voteCount).to.be.bignumber.equal(BN(1));
 	}
 
 	// Attempt to add voter2, it's fail
@@ -342,6 +360,13 @@ async function assertGetVoterAndGetProposal( voting, _voter1, _voter2, hasPropos
 }
 
 
+/**
+ * Proceed to an evolution of the work flow status in
+ * chronological order frome "RegisteringVoters" to "VotesTallied"
+ * and check the each event
+ * 
+ * @param any voting 
+ */
 async function checkStatusScheduling( voting) {
 
 	expectEvent(
