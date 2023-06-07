@@ -33,7 +33,7 @@ contract("Voting", accounts => {
 
 	describe("Initialisation", function() {
 
-		it("No voter, no proposal, no result", async () => {
+		it("No voter, no proposal, no result, initial status", async () => {
 
 			expect( await voting.owner()).to.be.bignumber.equal( BN(OWNER));
 	
@@ -54,16 +54,19 @@ contract("Voting", accounts => {
 				"You're not a voter"
 			);
 
+			exceptDefinedStatus( voting, RegisteringVoters);
+
 			// let proposalsArray = (await voting.proposalsArray());
 			// console("****");
 			// console(proposalsArray);
 			// console("****");
 
-			// result
+			// No result !
 			await expectRevert(
 				voting.tallyVotes(),
 				"Current status is not voting session ended"
 			);
+			//revertStatusChange( "Current status is not voting session ended", await voting.tallyVotes());
 
 			let winningProposalID = (await voting.winningProposalID());
 			expect(winningProposalID).to.be.bignumber.equal(BN(0));
@@ -180,9 +183,9 @@ contract("Voting", accounts => {
 			);
 	
 			// Time to propose now
+			expectStatusChangeOk( voting, RegisteringVoters, ProposalsRegistrationStarted, await voting.startProposalsRegistering()) ;
 			// STATUS has change !
-			await voting.startProposalsRegistering();
-	
+
 			// Attempt to add voter3, it's fail
 			await expectRevert(
 				voting.addVoter( VOTER_3),
@@ -211,14 +214,8 @@ contract("Voting", accounts => {
 			);
 	
 			// Registration start now
-			expectEvent(
-				await voting.startProposalsRegistering(),
-				"WorkflowStatusChange", {
-					previousStatus: RegisteringVoters,
-					newStatus     : ProposalsRegistrationStarted,
-				}
-			);
-	
+			expectStatusChangeOk( voting, RegisteringVoters, ProposalsRegistrationStarted, await voting.startProposalsRegistering()) ;
+
 			// voter1 attempt to propose with success
 			// there' is now ONE proposal
 			expectEvent(
@@ -267,7 +264,8 @@ contract("Voting", accounts => {
 	
 			// Registration start
 			// ------------------
-			await voting.startProposalsRegistering();
+			expectStatusChangeOk( voting, RegisteringVoters, ProposalsRegistrationStarted, await voting.startProposalsRegistering()) ;
+
 			await checkGetVoterAndGetProposal( voting, VOTER_1, VOTER_2, false, false);
 	
 			// voter1 attempt to propose with success
@@ -289,13 +287,15 @@ contract("Voting", accounts => {
 	
 			// Registration stop
 			// -----------------
-			await voting.endProposalsRegistering();
+			expectStatusChangeOk( voting, ProposalsRegistrationStarted, ProposalsRegistrationEnded, await voting.endProposalsRegistering()) ;
+
 			await checkGetVoterAndGetProposal( voting, VOTER_1, VOTER_2, true, false);
 	
 	
 			// Voting start
 			// ------------
-			await voting.startVotingSession();
+			expectStatusChangeOk( voting, ProposalsRegistrationEnded, VotingSessionStarted, await voting.startVotingSession()) ;
+
 			await checkGetVoterAndGetProposal( voting, VOTER_1, VOTER_2, true, false);
 	
 			// voter1 attempt to votefor proposition #1, succeed
@@ -329,22 +329,17 @@ contract("Voting", accounts => {
 
 			// Voting stop
 			// -----------
-			await voting.endVotingSession();
+			expectStatusChangeOk( voting, VotingSessionStarted, VotingSessionEnded, await voting.endVotingSession()) ;
+
 			await checkGetVoterAndGetProposal( voting, VOTER_1, VOTER_2, true, true);
 	
 
 			// Tallied
 			// -------
-			expectEvent(
-				await voting.tallyVotes(),
-				"WorkflowStatusChange", {
-					previousStatus: VotingSessionEnded,
-					newStatus     : VotesTallied,
-				}
-			);
-			exceptDefinedStatus( voting, VotesTallied);
+			expectStatusChangeOk( voting, VotingSessionEnded, VotesTallied, await voting.tallyVotes()) ;
 
-
+			// Check for winner
+			// ----------------
 			let winningProposalID = (await voting.winningProposalID());
 			expect(winningProposalID).to.be.bignumber.equal(INDEX_PROPOSAL_WINNER);
 
@@ -414,14 +409,14 @@ async function checkGetVoterAndGetProposal( voting, registeredVoter, unregistere
  */
 async function checkStatusScheduling( voting) {
 
-	checkStatusChange( voting, RegisteringVoters, ProposalsRegistrationStarted, await voting.startProposalsRegistering()) ;
-	checkStatusChange( voting, ProposalsRegistrationStarted, ProposalsRegistrationEnded, await voting.endProposalsRegistering()) ;
-	checkStatusChange( voting, ProposalsRegistrationEnded, VotingSessionStarted, await voting.startVotingSession()) ;
-	checkStatusChange( voting, VotingSessionStarted, VotingSessionEnded, await voting.endVotingSession()) ;
-	checkStatusChange( voting, VotingSessionEnded, VotesTallied, await voting.tallyVotes()) ;
+	expectStatusChangeOk( voting, RegisteringVoters, ProposalsRegistrationStarted, await voting.startProposalsRegistering()) ;
+	expectStatusChangeOk( voting, ProposalsRegistrationStarted, ProposalsRegistrationEnded, await voting.endProposalsRegistering()) ;
+	expectStatusChangeOk( voting, ProposalsRegistrationEnded, VotingSessionStarted, await voting.startVotingSession()) ;
+	expectStatusChangeOk( voting, VotingSessionStarted, VotingSessionEnded, await voting.endVotingSession()) ;
+	expectStatusChangeOk( voting, VotingSessionEnded, VotesTallied, await voting.tallyVotes()) ;
 }
 
-async function checkStatusChange( _voting, _prevStatus, _newStatus, _func) {
+async function expectStatusChangeOk( _voting, _prevStatus, _newStatus, _func) {
 	expectEvent(
 		_func,
 		"WorkflowStatusChange", {
@@ -430,6 +425,13 @@ async function checkStatusChange( _voting, _prevStatus, _newStatus, _func) {
 		}
 	);
 	exceptDefinedStatus( _voting, _newStatus);
+}
+
+async function revertStatusChange( _message, _func) {
+	expectRevert(
+		_func,
+		_message
+	);
 }
 
 
