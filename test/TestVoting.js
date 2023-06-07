@@ -19,7 +19,7 @@ contract("Voting", accounts => {
 	const _voter3 = accounts[3];
 	const _voter4 = accounts[4];
 	const _voter5 = accounts[5];
-	const _fraud6 = accounts[6];
+	const _voter6 = accounts[6];
 
 	let voting;
 
@@ -51,13 +51,21 @@ contract("Voting", accounts => {
 				voting.getOneProposal(0, {from: _voter1}),
 				"You're not a voter"
 			);
-	
+
+			// let proposalsArray = (await voting.proposalsArray());
+			// console("****");
+			// console(proposalsArray);
+			// console("****");
+
 			// result
 			await expectRevert(
 				voting.tallyVotes(),
 				"Current status is not voting session ended"
 			);
 				
+			let winningProposalID = (await voting.winningProposalID());
+			expect(winningProposalID).to.be.bignumber.equal(BN(0));
+
 		});
 
 	});
@@ -232,7 +240,7 @@ contract("Voting", accounts => {
 	
 		});
 
-		it("Full onlyVoters check access, check proposal & vote processing", async () => {
+		it("Full onlyVoters check access, check proposals & vote processing", async () => {
 
 			const proposal1  = "proposal 1";
 			const proposal2  = "proposal 2";
@@ -303,7 +311,17 @@ contract("Voting", accounts => {
 			await voting.endVotingSession();
 			await checkGetVoterAndGetProposal( voting, _voter1, _voter2, true, true);
 	
-			// TODO
+
+			expectEvent(
+				await voting.tallyVotes(),
+				"WorkflowStatusChange", {
+					previousStatus: VotingSessionEnded,
+					newStatus     : VotesTallied,
+				}
+			);
+
+			let winningProposalID = (await voting.winningProposalID());
+			expect(winningProposalID).to.be.bignumber.equal(BN(1));
 	
 		});
 	
