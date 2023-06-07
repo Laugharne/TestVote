@@ -10,6 +10,11 @@ const VotingSessionStarted         = BN(3);
 const VotingSessionEnded           = BN(4);
 const VotesTallied                 = BN(5);
 
+const indexGenesis           = BN(0);
+const indexProposition1      = BN(1);
+const indexPropositionWinner = BN(1);
+const nnTalliedVote          = BN(2);
+
 
 contract("Voting", accounts => {
 
@@ -217,7 +222,7 @@ contract("Voting", accounts => {
 			);
 	
 			// voter1 attempt to propose with success
-			// there' is now one proposal
+			// there' is now ONE proposal
 			expectEvent(
 				await voting.addProposal( proposal1, {from: _voter1}),
 				"ProposalRegistered",
@@ -225,7 +230,7 @@ contract("Voting", accounts => {
 			);
 	
 			// voter1 attempt to propose with success
-			// there' is now two proposal
+			// there' is now TWO proposals
 			expectEvent(
 				await voting.addProposal( proposal2, {from: _voter1}),
 				"ProposalRegistered",
@@ -272,7 +277,7 @@ contract("Voting", accounts => {
 			expectEvent(
 				await voting.addProposal( proposal1, {from: _voter1}),
 				"ProposalRegistered",
-				{proposalId: BN(1)}
+				{proposalId: indexProposition1}
 			);
 	
 			// voter2 attempt to propose, and fail
@@ -297,25 +302,25 @@ contract("Voting", accounts => {
 	
 			// voter1 attempt to votefor proposition #1, succeed
 			expectEvent(
-				await voting.setVote( BN(1), {from: _voter1}),
+				await voting.setVote( indexProposition1, {from: _voter1}),
 				"Voted", {
 					voter: _voter1,
-					proposalId: BN(1)
+					proposalId: indexProposition1
 				}
 			);
 	
 			// voter2 attempt to vote, and fail
 			await expectRevert(
-				voting.setVote( BN(1), {from: _voter2}),
+				voting.setVote( indexProposition1, {from: _voter2}),
 				"You're not a voter"
 			);
 
 			// voter3 attempt to vote for proposition #1, succeed
 			expectEvent(
-				await voting.setVote( BN(1), {from: _voter3}),
+				await voting.setVote( indexProposition1, {from: _voter3}),
 				"Voted", {
 					voter: _voter3,
-					proposalId: BN(1)
+					proposalId: indexProposition1
 				}
 			);
 
@@ -328,6 +333,8 @@ contract("Voting", accounts => {
 			await checkGetVoterAndGetProposal( voting, _voter1, _voter2, true, true);
 	
 
+			// Tallied
+			// -------
 			expectEvent(
 				await voting.tallyVotes(),
 				"WorkflowStatusChange", {
@@ -337,7 +344,7 @@ contract("Voting", accounts => {
 			);
 
 			let winningProposalID = (await voting.winningProposalID());
-			expect(winningProposalID).to.be.bignumber.equal(BN(1));
+			expect(winningProposalID).to.be.bignumber.equal(indexPropositionWinner);
 
 			await checkGetVoterAndGetProposal( voting, _voter1, _voter2, true, true);
 	
@@ -370,9 +377,9 @@ async function checkGetVoterAndGetProposal( voting, _voter1, _voter2, hasProposa
 		expect(voterStruct.votedProposalId).to.be.bignumber.equal(BN(0));
 		assert.equal(voterStruct.hasVoted, false, "Allready voted");
 	} else {
-		expect(voterStruct.votedProposalId).to.be.bignumber.equal(BN(1));
-		let proposalStruct = await voting.getOneProposal(1, {from: _voter1});
-		expect(proposalStruct.voteCount).to.be.bignumber.equal(BN(2));
+		expect(voterStruct.votedProposalId).to.be.bignumber.equal(indexProposition1);
+		let proposalStruct = await voting.getOneProposal(indexProposition1, {from: _voter1});
+		expect(proposalStruct.voteCount).to.be.bignumber.equal(nnTalliedVote);
 	}
 
 	// Attempt to add voter2, it's fail
@@ -382,15 +389,15 @@ async function checkGetVoterAndGetProposal( voting, _voter1, _voter2, hasProposa
 	);
 
 	await expectRevert(
-		voting.getOneProposal(0, {from: _voter2}),
+		voting.getOneProposal(indexGenesis, {from: _voter2}),
 		"You're not a voter"
 	);
 
 	if( hasProposal == false) return;
-	let proposalStruct = await voting.getOneProposal(0, {from: _voter1});
+	let proposalStruct = await voting.getOneProposal(indexGenesis, {from: _voter1});
 	assert.equal(proposalStruct.description, "GENESIS",  "Not GENESIS proposal");
 
-	proposalStruct = await voting.getOneProposal(1, {from: _voter1});
+	proposalStruct = await voting.getOneProposal(indexProposition1, {from: _voter1});
 	assert.equal(proposalStruct.description, "proposal 1",  "Not proposal 1");
 
 }
