@@ -62,7 +62,7 @@ contract("Voting", accounts => {
 				voting.tallyVotes(),
 				"Current status is not voting session ended"
 			);
-				
+
 			let winningProposalID = (await voting.winningProposalID());
 			expect(winningProposalID).to.be.bignumber.equal(BN(0));
 
@@ -252,6 +252,13 @@ contract("Voting", accounts => {
 				{voterAddress: _voter1}
 			);
 	
+			// Add voter3 (voter1 & voter3 are rtegistered now, still no voter2 registered)
+			expectEvent(
+				await voting.addVoter( _voter3),
+				"VoterRegistered",
+				{voterAddress: _voter3}
+			);
+
 			await checkGetVoterAndGetProposal( voting, _voter1, _voter2, false, false);
 	
 	
@@ -302,10 +309,19 @@ contract("Voting", accounts => {
 				voting.setVote( BN(1), {from: _voter2}),
 				"You're not a voter"
 			);
-	
+
+			// voter3 attempt to vote for proposition #1, succeed
+			expectEvent(
+				await voting.setVote( BN(1), {from: _voter3}),
+				"Voted", {
+					voter: _voter3,
+					proposalId: BN(1)
+				}
+			);
+
 			await checkGetVoterAndGetProposal( voting, _voter1, _voter2, true, true);
-	
-	
+
+
 			// Voting stop
 			// -----------
 			await voting.endVotingSession();
@@ -322,6 +338,8 @@ contract("Voting", accounts => {
 
 			let winningProposalID = (await voting.winningProposalID());
 			expect(winningProposalID).to.be.bignumber.equal(BN(1));
+
+			await checkGetVoterAndGetProposal( voting, _voter1, _voter2, true, true);
 	
 		});
 	
@@ -350,11 +368,11 @@ async function checkGetVoterAndGetProposal( voting, _voter1, _voter2, hasProposa
 	//expect(voterStruct.isRegistered).to.be.bool.equal(true);
 	if( hasVoted == false) {
 		expect(voterStruct.votedProposalId).to.be.bignumber.equal(BN(0));
-		assert.equal(voterStruct.hasVoted, false, "Already voted");
+		assert.equal(voterStruct.hasVoted, false, "Allready voted");
 	} else {
 		expect(voterStruct.votedProposalId).to.be.bignumber.equal(BN(1));
 		let proposalStruct = await voting.getOneProposal(1, {from: _voter1});
-		expect(proposalStruct.voteCount).to.be.bignumber.equal(BN(1));
+		expect(proposalStruct.voteCount).to.be.bignumber.equal(BN(2));
 	}
 
 	// Attempt to add voter2, it's fail
