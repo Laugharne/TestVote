@@ -342,6 +342,8 @@ contract("Voting", accounts => {
 					newStatus     : VotesTallied,
 				}
 			);
+			exceptDefinedStatus( voting, VotesTallied);
+
 
 			let winningProposalID = (await voting.winningProposalID());
 			expect(winningProposalID).to.be.bignumber.equal(INDEX_PROPOSAL_WINNER);
@@ -412,44 +414,26 @@ async function checkGetVoterAndGetProposal( voting, registeredVoter, unregistere
  */
 async function checkStatusScheduling( voting) {
 
+	checkStatusChange( voting, RegisteringVoters, ProposalsRegistrationStarted, await voting.startProposalsRegistering()) ;
+	checkStatusChange( voting, ProposalsRegistrationStarted, ProposalsRegistrationEnded, await voting.endProposalsRegistering()) ;
+	checkStatusChange( voting, ProposalsRegistrationEnded, VotingSessionStarted, await voting.startVotingSession()) ;
+	checkStatusChange( voting, VotingSessionStarted, VotingSessionEnded, await voting.endVotingSession()) ;
+	checkStatusChange( voting, VotingSessionEnded, VotesTallied, await voting.tallyVotes()) ;
+}
+
+async function checkStatusChange( _voting, _prevStatus, _newStatus, _func) {
 	expectEvent(
-		await voting.startProposalsRegistering(),
+		_func,
 		"WorkflowStatusChange", {
-			previousStatus: RegisteringVoters,
-			newStatus     : ProposalsRegistrationStarted,
+			previousStatus: _prevStatus,
+			newStatus     : _newStatus,
 		}
 	);
+	exceptDefinedStatus( _voting, _newStatus);
+}
 
-	expectEvent(
-		await voting.endProposalsRegistering(),
-		"WorkflowStatusChange", {
-			previousStatus: ProposalsRegistrationStarted,
-			newStatus     : ProposalsRegistrationEnded,
-		}
-	);
 
-	expectEvent(
-		await voting.startVotingSession(),
-		"WorkflowStatusChange", {
-			previousStatus: ProposalsRegistrationEnded,
-			newStatus     : VotingSessionStarted,
-		}
-	);
-
-	expectEvent(
-		await voting.endVotingSession(),
-		"WorkflowStatusChange", {
-			previousStatus: VotingSessionStarted,
-			newStatus     : VotingSessionEnded,
-		}
-	);
-
-	expectEvent(
-		await voting.tallyVotes(),
-		"WorkflowStatusChange", {
-			previousStatus: VotingSessionEnded,
-			newStatus     : VotesTallied,
-		}
-	);
-
+async function exceptDefinedStatus( _voting, _status) {
+	workflowStatus = (await _voting.workflowStatus());
+	expect(workflowStatus).to.be.bignumber.equal(_status);
 }
