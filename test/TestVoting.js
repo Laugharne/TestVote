@@ -39,12 +39,12 @@ contract("Voting", accounts => {
 	
 			// Voters
 			await expectRevert(
-				voting.getVoter(OWNER),
+				voting.getVoter(OWNER, {from: OWNER}),
 				"You're not a voter"
 			);
 	
 			await expectRevert(
-				voting.getVoter(VOTER_1),
+				voting.getVoter(VOTER_1, {from: OWNER}),
 				"You're not a voter"
 			);
 	
@@ -56,11 +56,6 @@ contract("Voting", accounts => {
 
 			exceptDefinedStatus( voting, RegisteringVoters);
 
-			// let proposalsArray = (await voting.proposalsArray());
-			// console("****");
-			// console(proposalsArray);
-			// console("****");
-
 			// No result !
 			await expectRevert(
 				voting.tallyVotes(),
@@ -68,7 +63,7 @@ contract("Voting", accounts => {
 			);
 			//revertStatusChange( "Current status is not voting session ended", await voting.tallyVotes());
 
-			let winningProposalID = (await voting.winningProposalID());
+			let winningProposalID = (await voting.winningProposalID( {from: OWNER}));
 			expect(winningProposalID).to.be.bignumber.equal(BN(0));
 
 		});
@@ -81,7 +76,7 @@ contract("Voting", accounts => {
 		it("Check access if owner", async () => {
 
 			expectEvent(
-				await voting.addVoter( VOTER_1),
+				await voting.addVoter( VOTER_1, {from: OWNER}),
 				"VoterRegistered",
 				{voterAddress: VOTER_1}
 			);
@@ -134,22 +129,22 @@ contract("Voting", accounts => {
 
 			// revert order for status evolution, now
 			await expectRevert(
-				voting.tallyVotes(),
+				voting.tallyVotes({from: OWNER}),
 				"Current status is not voting session ended"
 			);
 
 			await expectRevert(
-				voting.endVotingSession(),
+				voting.endVotingSession({from: OWNER}),
 				"Voting session havent started yet"
 			);
 
 			await expectRevert(
-				voting.startVotingSession(),
+				voting.startVotingSession({from: OWNER}),
 				"Registering proposals phase is not finished"
 			);
 
 			await expectRevert(
-				voting.endProposalsRegistering(),
+				voting.endProposalsRegistering({from: OWNER}),
 				"Registering proposals havent started yet"
 			);
 
@@ -164,21 +159,21 @@ contract("Voting", accounts => {
 
 			// Add voter1
 			expectEvent(
-				await voting.addVoter( VOTER_1),
+				await voting.addVoter( VOTER_1, {from: OWNER}),
 				"VoterRegistered",
 				{voterAddress: VOTER_1}
 			);
 	
 			// Add voter2
 			expectEvent(
-				await voting.addVoter( VOTER_2),
+				await voting.addVoter( VOTER_2, {from: OWNER}),
 				"VoterRegistered",
 				{voterAddress: VOTER_2}
 			);
 	
 			// Attempt to add voter1 AGAIN, it's fail
 			await expectRevert(
-				voting.addVoter( VOTER_1),
+				voting.addVoter( VOTER_1, {from: OWNER}),
 				"Already registered"
 			);
 	
@@ -188,7 +183,7 @@ contract("Voting", accounts => {
 
 			// Attempt to add voter3, it's fail
 			await expectRevert(
-				voting.addVoter( VOTER_3),
+				voting.addVoter( VOTER_3, {from: OWNER}),
 				"Voters registration is not open yet"
 			);
 	
@@ -202,7 +197,7 @@ contract("Voting", accounts => {
 	
 			// Add voter1
 			expectEvent(
-				await voting.addVoter( VOTER_1),
+				await voting.addVoter( VOTER_1, {from: OWNER}),
 				"VoterRegistered",
 				{voterAddress: VOTER_1}
 			);
@@ -229,7 +224,7 @@ contract("Voting", accounts => {
 			expectEvent(
 				await voting.addProposal( proposal2, {from: VOTER_1}),
 				"ProposalRegistered",
-				{proposalId: BN(2)}
+				{proposalId: NN_VOTE}
 			);
 	
 			// voter1 attempt to propose a void string, and fail
@@ -242,19 +237,19 @@ contract("Voting", accounts => {
 
 		it("Full onlyVoters check access, check proposals & vote processing", async () => {
 
-			const proposal1  = "proposal 1";
-			const proposal2  = "proposal 2";
+			const proposal1 = "proposal 1";
+			const proposal2 = "proposal 2";
 	
 			// Add voter1 (the only one voter registered, no voter2 registered)
 			expectEvent(
-				await voting.addVoter( VOTER_1),
+				await voting.addVoter( VOTER_1, {from: OWNER}),
 				"VoterRegistered",
 				{voterAddress: VOTER_1}
 			);
 	
 			// Add voter3 (voter1 & voter3 are registered now, still no voter2 registered)
 			expectEvent(
-				await voting.addVoter( VOTER_3),
+				await voting.addVoter( VOTER_3, {from: OWNER}),
 				"VoterRegistered",
 				{voterAddress: VOTER_3}
 			);
@@ -340,7 +335,7 @@ contract("Voting", accounts => {
 
 			// Check for winner
 			// ----------------
-			let winningProposalID = (await voting.winningProposalID());
+			let winningProposalID = (await voting.winningProposalID({from: OWNER}));
 			expect(winningProposalID).to.be.bignumber.equal(INDEX_PROPOSAL_WINNER);
 
 			await checkGetVoterAndGetProposal( voting, VOTER_1, VOTER_2, true, true);
@@ -433,7 +428,6 @@ async function revertStatusChange( _message, _func) {
 		_message
 	);
 }
-
 
 async function exceptDefinedStatus( _voting, _status) {
 	workflowStatus = (await _voting.workflowStatus());
