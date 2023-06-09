@@ -31,7 +31,8 @@ contract("Voting", accounts => {
 		beforeEach(async function() {
 			voting = await Voting.new({from: OWNER});
 		});
-	
+
+		
 		it("Ownership", async () => {
 			expect( await voting.owner()).to.be.bignumber.equal( BN(OWNER));
 		});
@@ -76,7 +77,7 @@ contract("Voting", accounts => {
 			//revertStatusChange("Current status is not voting session ended", await voting.tallyVotes( {from: OWNER}));
 
 			let winningProposalID = (await voting.winningProposalID( {from: OWNER}));
-			expect(winningProposalID).to.be.bignumber.equal(BN(0));
+			await expect(winningProposalID).to.be.bignumber.equal(BN(0));
 
 		});
 
@@ -89,6 +90,7 @@ contract("Voting", accounts => {
 			voting = await Voting.new({from: OWNER});
 		});
 	
+
 		it("Chronological order", async () => {
 			await checkStatusScheduling( voting);
 		});
@@ -132,7 +134,8 @@ contract("Voting", accounts => {
 		beforeEach(async function() {
 			voting = await Voting.new({from: OWNER});
 		});
-	
+
+
 		it("If not owner", async () => {
 
 			await expectRevert(
@@ -181,7 +184,8 @@ contract("Voting", accounts => {
 		beforeEach(async function() {
 			voting = await Voting.new({from: OWNER});
 		});
-	
+
+
 		it("Voters : check emit & revert for addVoter()", async () => {
 
 			// Add voter1
@@ -208,10 +212,6 @@ contract("Voting", accounts => {
 	
 		});
 
-
-		beforeEach(async function() {
-			voting = await Voting.new({from: OWNER});
-		});
 
 		it("Proposals : check emit & revert for addProposal()", async () => {
 
@@ -256,10 +256,6 @@ contract("Voting", accounts => {
 		});
 
 
-		beforeEach(async function() {
-			voting = await Voting.new({from: OWNER});
-		});
-
 		it("Full \"onlyVoters\" check access, check proposals & vote processing", async () => {
 
 			const proposal1 = "proposal 1";
@@ -270,14 +266,11 @@ contract("Voting", accounts => {
 
 			// Add voter3 (voter1 & voter3 are registered now, still no voter2 registered)
 			await expectAddNewVoter( voting, VOTER_3, OWNER);
-
 			await checkGetVoterAndGetProposal( voting, VOTER_1, VOTER_2, false, false);
-	
 	
 			// Registration start
 			// ------------------
-			expectStatusChangeOk( voting, RegisteringVoters, ProposalsRegistrationStarted, await voting.startProposalsRegistering()) ;
-
+			await expectStatusChangeOk( voting, RegisteringVoters, ProposalsRegistrationStarted, await voting.startProposalsRegistering());
 			await checkGetVoterAndGetProposal( voting, VOTER_1, VOTER_2, false, false);
 	
 			// voter1 attempt to propose with success
@@ -296,13 +289,12 @@ contract("Voting", accounts => {
 	
 			await checkGetVoterAndGetProposal( voting, VOTER_1, VOTER_2, true, false);
 	
-	
 			// Registration stop
 			// -----------------
 			expectStatusChangeOk( voting, ProposalsRegistrationStarted, ProposalsRegistrationEnded, await voting.endProposalsRegistering()) ;
 
 			await checkGetVoterAndGetProposal( voting, VOTER_1, VOTER_2, true, false);
-	
+
 	
 			// Voting start
 			// ------------
@@ -337,13 +329,11 @@ contract("Voting", accounts => {
 			// There is now TWO votes for proposal #1
 			await checkGetVoterAndGetProposal( voting, VOTER_1, VOTER_2, true, true);
 
-
 			// Voting stop
 			// -----------
 			expectStatusChangeOk( voting, VotingSessionStarted, VotingSessionEnded, await voting.endVotingSession()) ;
 
 			await checkGetVoterAndGetProposal( voting, VOTER_1, VOTER_2, true, true);
-	
 
 			// Tallied
 			// -------
@@ -439,7 +429,7 @@ async function expectStatusChangeOk( _voting, _prevStatus, _newStatus, _func) {
 }
 
 async function revertStatusChange( _message, _func) {
-	expectRevert(
+	await expectRevert(
 		_func,
 		_message
 	);
