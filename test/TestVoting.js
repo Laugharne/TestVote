@@ -26,18 +26,21 @@ contract("Voting", accounts => {
 	let voting;
 
 
-	beforeEach(async function(){
-		voting = await Voting.new({from: OWNER});
-	});
-
-
 	describe("Initialisation", function() {
 
-		it("No voter, no proposal, no result, initial status", async () => {
-
-			expect( await voting.owner()).to.be.bignumber.equal( BN(OWNER));
+		beforeEach(async function() {
+			voting = await Voting.new({from: OWNER});
+		});
 	
-			// Voters
+		it("Ownership", async () => {
+			expect( await voting.owner()).to.be.bignumber.equal( BN(OWNER));
+		});
+	
+		it("Initial workflow status", async () => {
+			exceptDefinedStatus( voting, RegisteringVoters);
+		});
+
+		it("No voter", async () => {
 			await expectRevert(
 				voting.getVoter(OWNER, {from: OWNER}),
 				"You're not a voter"
@@ -47,21 +50,30 @@ contract("Voting", accounts => {
 				voting.getVoter(VOTER_1, {from: OWNER}),
 				"You're not a voter"
 			);
+
+		});
 	
+		it("No proposal", async () => {
 			// No registered voter, so no access to getOneProposal()
+			await expectRevert(
+				voting.getOneProposal(0, {from: OWNER}),
+				"You're not a voter"
+			);
 			await expectRevert(
 				voting.getOneProposal(0, {from: VOTER_1}),
 				"You're not a voter"
 			);
 
-			exceptDefinedStatus( voting, RegisteringVoters);
+		});
+	
+		it("No result", async () => {
 
 			// No result !
 			await expectRevert(
-				voting.tallyVotes(),
+				voting.tallyVotes( {from: OWNER}),
 				"Current status is not voting session ended"
 			);
-			//revertStatusChange( "Current status is not voting session ended", await voting.tallyVotes());
+			//revertStatusChange("Current status is not voting session ended", await voting.tallyVotes( {from: OWNER}));
 
 			let winningProposalID = (await voting.winningProposalID( {from: OWNER}));
 			expect(winningProposalID).to.be.bignumber.equal(BN(0));
@@ -71,21 +83,57 @@ contract("Voting", accounts => {
 	});
 
 
-	describe("onlyOwner functions", function() {
+	describe("Check workflow status evolution", function() {
 
-		it("Check access if owner", async () => {
-
-			expectEvent(
-				await voting.addVoter( VOTER_1, {from: OWNER}),
-				"VoterRegistered",
-				{voterAddress: VOTER_1}
-			);
-	
-			await checkStatusScheduling( voting);
-	
+		beforeEach(async function() {
+			voting = await Voting.new({from: OWNER});
 		});
 	
-		it("Check access if not owner", async () => {
+		it("Chronological order", async () => {
+			await checkStatusScheduling( voting);
+		});
+
+		it("Revert order", async () => {
+
+			await checkStatusScheduling( voting);
+
+			await expectRevert(
+				voting.tallyVotes({from: OWNER}),
+				"Current status is not voting session ended"
+			);
+
+			await expectRevert(
+				voting.endVotingSession({from: OWNER}),
+				"Voting session havent started yet"
+			);
+
+			await expectRevert(
+				voting.startVotingSession({from: OWNER}),
+				"Registering proposals phase is not finished"
+			);
+
+			await expectRevert(
+				voting.endProposalsRegistering({from: OWNER}),
+				"Registering proposals havent started yet"
+			);
+
+			await expectRevert(
+				voting.startProposalsRegistering({from: OWNER}),
+				"Registering proposals cant be started now"
+			);
+
+		});
+
+	});
+
+
+	describe("\"onlyOwner\" functions access", function() {
+
+		beforeEach(async function() {
+			voting = await Voting.new({from: OWNER});
+		});
+	
+		it("If not owner", async () => {
 
 			await expectRevert(
 				voting.addVoter( VOTER_3, {from: VOTER_1}),
@@ -118,58 +166,29 @@ contract("Voting", accounts => {
 			);
 	
 		});
-	});
 
-
-	describe("Status evolution", function() {
-
-		it("Check scheduling", async () => {
-
-			await checkStatusScheduling( voting);
-
-			// revert order for status evolution, now
-			await expectRevert(
-				voting.tallyVotes({from: OWNER}),
-				"Current status is not voting session ended"
-			);
-
-			await expectRevert(
-				voting.endVotingSession({from: OWNER}),
-				"Voting session havent started yet"
-			);
-
-			await expectRevert(
-				voting.startVotingSession({from: OWNER}),
-				"Registering proposals phase is not finished"
-			);
-
-			await expectRevert(
-				voting.endProposalsRegistering({from: OWNER}),
-				"Registering proposals havent started yet"
-			);
-
+		it("If owner", async () => {
+			await expectAddNewVoter( voting, VOTER_1, OWNER);
+			await checkStatusScheduling( voting);	
 		});
-
+	
 	});
+
 
 
 	describe("Vote", function() {
 
+		beforeEach(async function() {
+			voting = await Voting.new({from: OWNER});
+		});
+	
 		it("Voters : check emit & revert for addVoter()", async () => {
 
 			// Add voter1
-			expectEvent(
-				await voting.addVoter( VOTER_1, {from: OWNER}),
-				"VoterRegistered",
-				{voterAddress: VOTER_1}
-			);
+			await expectAddNewVoter( voting, VOTER_1, OWNER);
 	
 			// Add voter2
-			expectEvent(
-				await voting.addVoter( VOTER_2, {from: OWNER}),
-				"VoterRegistered",
-				{voterAddress: VOTER_2}
-			);
+			await expectAddNewVoter( voting, VOTER_2, OWNER);
 	
 			// Attempt to add voter1 AGAIN, it's fail
 			await expectRevert(
@@ -178,7 +197,7 @@ contract("Voting", accounts => {
 			);
 	
 			// Time to propose now
-			expectStatusChangeOk( voting, RegisteringVoters, ProposalsRegistrationStarted, await voting.startProposalsRegistering()) ;
+			await expectStatusChangeOk( voting, RegisteringVoters, ProposalsRegistrationStarted, await voting.startProposalsRegistering()) ;
 			// STATUS has change !
 
 			// Attempt to add voter3, it's fail
@@ -189,6 +208,11 @@ contract("Voting", accounts => {
 	
 		});
 
+
+		beforeEach(async function() {
+			voting = await Voting.new({from: OWNER});
+		});
+
 		it("Proposals : check emit & revert for addProposal()", async () => {
 
 			const proposal1  = "proposal 1, from voter 1";
@@ -196,20 +220,16 @@ contract("Voting", accounts => {
 			const voidString = "";
 	
 			// Add voter1
-			expectEvent(
-				await voting.addVoter( VOTER_1, {from: OWNER}),
-				"VoterRegistered",
-				{voterAddress: VOTER_1}
-			);
-	
+			await expectAddNewVoter( voting, VOTER_1, OWNER);
+
 			// voter1 attempt to propose, and fail
 			await expectRevert(
 				voting.addProposal( proposal1, {from: VOTER_1}),
 				"Proposals are not allowed yet"
 			);
-	
+
 			// Registration start now
-			expectStatusChangeOk( voting, RegisteringVoters, ProposalsRegistrationStarted, await voting.startProposalsRegistering()) ;
+			await expectStatusChangeOk( voting, RegisteringVoters, ProposalsRegistrationStarted, await voting.startProposalsRegistering()) ;
 
 			// voter1 attempt to propose with success
 			// there' is now ONE proposal
@@ -235,24 +255,21 @@ contract("Voting", accounts => {
 	
 		});
 
-		it("Full onlyVoters check access, check proposals & vote processing", async () => {
+
+		beforeEach(async function() {
+			voting = await Voting.new({from: OWNER});
+		});
+
+		it("Full \"onlyVoters\" check access, check proposals & vote processing", async () => {
 
 			const proposal1 = "proposal 1";
 			const proposal2 = "proposal 2";
 	
 			// Add voter1 (the only one voter registered, no voter2 registered)
-			expectEvent(
-				await voting.addVoter( VOTER_1, {from: OWNER}),
-				"VoterRegistered",
-				{voterAddress: VOTER_1}
-			);
-	
+			await expectAddNewVoter( voting, VOTER_1, OWNER);
+
 			// Add voter3 (voter1 & voter3 are registered now, still no voter2 registered)
-			expectEvent(
-				await voting.addVoter( VOTER_3, {from: OWNER}),
-				"VoterRegistered",
-				{voterAddress: VOTER_3}
-			);
+			await expectAddNewVoter( voting, VOTER_3, OWNER);
 
 			await checkGetVoterAndGetProposal( voting, VOTER_1, VOTER_2, false, false);
 	
@@ -318,7 +335,6 @@ contract("Voting", accounts => {
 			);
 
 			// There is now TWO votes for proposal #1
-
 			await checkGetVoterAndGetProposal( voting, VOTER_1, VOTER_2, true, true);
 
 
@@ -432,4 +448,18 @@ async function revertStatusChange( _message, _func) {
 async function exceptDefinedStatus( _voting, _status) {
 	workflowStatus = (await _voting.workflowStatus());
 	expect(workflowStatus).to.be.bignumber.equal(_status);
+}
+
+async function expectAddNewVoter( _voting, _address, _owner) {
+	expectEvent(
+		await _voting.addVoter( _address, {from: _owner}),
+		"VoterRegistered",
+		{voterAddress: _address}
+	);
+
+	voterStruct = await _voting.getVoter(_address, {from: _address});
+	expect(voterStruct.isRegistered).to.be.true;
+	expect(voterStruct.hasVoted).to.be.false;
+	expect(voterStruct.votedProposalId).to.be.bignumber.equal( BN(0));
+
 }
