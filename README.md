@@ -1,3 +1,27 @@
+## Projet #2 - Système de vote (test unit)
+
+### Enoncé
+
+
+Oui oui, nous allons repartir du défi “Système de vote” ! 
+
+Vous repartirez du smart contract proposé en correction 
+
+Depuis la dernière version, vous avez vu la partie CI/CD avec les tests et le déploiement. 
+
+Vous devez alors fournir les tests unitaires de votre smart contract Nous n’attendons pas une couverture à 100% du smart contract mais veillez à bien tester les différentes possibilités de retours (event, revert).
+
+**A rendre :**
+
+- votre lien Github (tests et explication rapide de ce qui a été fait dans un readme.md
+
+
+
+**Lien énoncé :** [https://formation.alyra.fr/products/developpeur-blockchain/categories/2149101531/posts/2153206159](https://formation.alyra.fr/products/developpeur-blockchain/categories/2149101531/posts/2153206159)
+
+**Script initial :** [https://github.com/BenBktech/Promo-Buterin/blob/main/1.Solidity/Voting.sol](https://github.com/BenBktech/Promo-Buterin/blob/main/1.Solidity/Voting.sol)
+
+
 
 ### Constantes
 
@@ -71,7 +95,7 @@ Des fonctions ont été également réalisées afin de "regrouper" des contrôle
   - expectStatusChangeOk()
   - expectStatusScheduling()
   
-- L'ajout d'un votant :
+- L'**ajout d'un votant** :
   - expectAddNewVoter
 
 - Une fonction "*couteau suisse*" **checkGetVoterAndGetProposal()** éffectuant des contrôles sur un votant et la proposition votée, selon :
@@ -195,13 +219,6 @@ Des **events** précis sont émis lors du changement d'étape.
 
 ##### Extrait #1 :
 ```javascript
-await expectRevert(
-	voting.endVotingSession(),
-	"Voting session havent started yet"
-);
-```
-##### Extrait #2 :
-```javascript
 expectEvent(
 	await voting.startProposalsRegistering(),
 	"WorkflowStatusChange", {
@@ -210,12 +227,18 @@ expectEvent(
 	}
 );
 ```
+##### Extrait #2 :
+```javascript
+await expectRevert(
+	voting.endVotingSession(),
+	"Voting session havent started yet"
+);
+```
 
 
 ### onlyOwner
 
 Les fonctions en accès onlyOwner sont pour la grosse majorité liées à l'évolution de processus de vote, à l'exception de **addVoter()**.
-**TODO**
 
 
 ##### Accès aux fonctions concernées par le modifier **onlyOwner** :
@@ -311,14 +334,26 @@ await expectRevert(
 );
 ```
 
+##### Vote processing :
+
+
 ### Truffle
 
 Le test du code a été réalisé l'aide des outils :
 - **Truffle** : [https://trufflesuite.com/](https://trufflesuite.com/)
 - **Ganache** : [https://trufflesuite.com/ganache/](https://trufflesuite.com/ganache/)
+- **eth-gas-reporter** : [https://www.npmjs.com/package/eth-gas-reporter](https://www.npmjs.com/package/eth-gas-reporter)
 
+**Versions des outils**
+```
+Truffle v5.9.2 (core: 5.9.2)
+Ganache v7.8.0
+Solidity - 0.8.18 (solc-js)
+Node v18.16.0
+Web3.js v1.10.0
+```
 
 
 ##### Résultat :
 
-![](2023-06-11-09-58-14.png)
+![](2023-06-11-16-41-18.png)
