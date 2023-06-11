@@ -334,12 +334,26 @@ await expectRevert(
 );
 ```
 
-##### Vote processing :
+### Vote processing :
 
+##### Scénario :
+- Deux votants (d'adresse **VOTER_1** et **VOTER_3**) sont ajoutés à la session de vote.
+- La période de proposition est ouverte, tandis que l'ajout de votant est clot.
+- **VOTER_1** fait une proposition de vote (proposition #1, indice 1), La proposition d'indice 0 étant la **GENESIS** depuis l'ouverture des propostions.
+- **VOTER_1** fait à nouveau une proposition de vote, en vain.
+- De même pour **VOTER_2** qui n'est même pas un votant enregistré.
+- La période de proposition est close.
+- La période de vote commence pour les votants enregistrés.
+- **VOTER_1** vote pour la proposition #1, avec succès.
+- **VOTER_2** vote pour la proposition #1, en vain.
+- **VOTER_3** vote pour la proposition #1, avec succès.
+- Il y a maintenant **2 votes** pour la **proposition #1**
+- Après cloture des votes, le dépouillement est lancé.
+- Le proposition **gagnante** est la **proposition #1** (d'indice 1) avec **2 votes**
 
 ### Truffle
 
-Le test du code a été réalisé l'aide des outils :
+Le test du code a été réalisé l'aide des outils suivant :
 - **Truffle** : [https://trufflesuite.com/](https://trufflesuite.com/)
 - **Ganache** : [https://trufflesuite.com/ganache/](https://trufflesuite.com/ganache/)
 - **eth-gas-reporter** : [https://www.npmjs.com/package/eth-gas-reporter](https://www.npmjs.com/package/eth-gas-reporter)
@@ -348,11 +362,10 @@ Le test du code a été réalisé l'aide des outils :
 ```
 Truffle v5.9.2 (core: 5.9.2)
 Ganache v7.8.0
-Solidity - 0.8.18 (solc-js)
+Solidity - 0.8.13 (solc-js)
 Node v18.16.0
 Web3.js v1.10.0
 ```
-
 
 ##### Résultat :
 
