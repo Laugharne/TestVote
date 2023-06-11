@@ -1,68 +1,188 @@
 
-## Vecteurs d'états
+### Constantes
+
+Afin de gagner en lisibilité de lecture du script de test, différentes constantes sont définies.
+
+Les différents états du **Workflow** sont définis ainsi :
+
+##### Extrait :
+
+```javascript
+const RegisteringVoters            = BN(0);
+const ProposalsRegistrationStarted = BN(1);
+const ProposalsRegistrationEnded   = BN(2);
+const VotingSessionStarted         = BN(3);
+const VotingSessionEnded           = BN(4);
+const VotesTallied                 = BN(5);
+```
+
+Les différentes adresses utilisées dans le script de test, sont aussi définies de manière explicites.
+
+#### Extrait :
+
+```javascript
+const OWNER   = accounts[0];
+const VOTER_1 = accounts[1];
+const VOTER_2 = accounts[2];
+const VOTER_3 = accounts[3];
+```
+
+Ainsi que différents indexs de proposition et autre constante.
+
+##### Extrait :
+
+```javascript
+const INDEX_GENESIS         = BN(0);
+const INDEX_PROPOSAL_1      = BN(1);
+const INDEX_PROPOSAL_WINNER = BN(1);
+const NN_VOTE               = BN(2);
+```
+
+
+### Les différents vecteurs d'états
+
 On peut noter les principaux **vecteurs d'états** dans le code du fichier source "*Voting.sol*"
 
 - WorkflowStatus
 - onlyOwner
 - onlyVoters
 
-Ainsi que les données qui évoluent en fonctions du déroulement du processus de vote et des intéractions réalisées par le "*owner*" et les votants.
+Ainsi que les **variables** qui évoluent en fonctions du déroulement du processus de vote et des intéractions réalisées par le "*owner*" et les votants.
 
 - winningProposalID
 - proposalsArray
 - voters
 
-Le cas **proposalsArray** est intéressant car à partir du passage à l'étape **ProposalsRegistrationStarted** du déroulement du processus de vote (workflow) il y a au moins **UNE** proposition, la proposition **GENESIS**, il y a donc un état testable !
+Le cas **proposalsArray** est intéressant car à partir du passage à l'étape **ProposalsRegistrationStarted** du déroulement du processus de vote (workflow) il y a au moins **une** proposition, la proposition **GENESIS**, il y a donc un état testable !
 
-#### Extrait :
+##### Extrait :
 ```javascript
 let proposalStruct = await voting.getOneProposal(0, {from: _voter1});
 assert.equal(proposalStruct.description, "GENESIS",  "Not GENESIS proposal");
 ```
 
 
-## Déploiement
-Au déploiement du **contrat**, celui-ci ne possède :
-- ni votant
-- ni proposition de vote
-- ni résultat de vote
-- il est juste "*possédé*" par le **owner** qui l'a déployé
+### Factorisation
 
-#### Extrait :
+Des fonctions ont été également réalisées afin de "regrouper" des contrôles multiples autour de certaines fonctionalités ou processus comme :
+
+- Les changements d'état dans l'**évolution du processus de vote**.
+  - exceptDefinedStatus()
+  - expectStatusChangeOk()
+  - expectStatusScheduling()
+  
+- L'ajout d'un votant :
+  - expectAddNewVoter
+
+- Une fonction "*couteau suisse*" **checkGetVoterAndGetProposal()** éffectuant des contrôles sur un votant et la proposition votée, selon :
+  - Qu'une proposition de vote soit disponible ou pas
+  - Qu'un votant ait voté pour une proposition donnée
+
+
+##### Extraits :
+
 ```javascript
-it("initialisation : no voter, no proposal, no result", async () => {
+async function exceptDefinedStatus( _voting, _status) {
+	workflowStatus = (await _voting.workflowStatus());
+	expect(workflowStatus).to.be.bignumber.equal(_status);
+}
 
-	expect( await voting.owner()).to.be.bignumber.equal( BN(_owner));
+async function expectStatusChangeOk( _voting, _prevStatus, _newStatus, _func) {
+	expectEvent(
+		_func,
+		"WorkflowStatusChange", {
+			previousStatus: _prevStatus,
+			newStatus     : _newStatus,
+		}
+	);
+	exceptDefinedStatus( _voting, _newStatus);
+}
+```
 
-	// Voters
+```javascript
+async function expectAddNewVoter( _voting, _address, _owner) {
+	expectEvent(
+		await _voting.addVoter( _address, {from: _owner}),
+		"VoterRegistered",
+		{voterAddress: _address}
+	);
+
+	voterStruct = await _voting.getVoter( _address, {from: _address});
+	expect(voterStruct.isRegistered).to.be.true;
+	expect(voterStruct.hasVoted).to.be.false;
+	expect(voterStruct.votedProposalId).to.be.bignumber.equal( BN(0));
+
+}
+```
+
+
+### Déploiement
+
+Au déploiement du **contrat**, celui-ci : 
+- ne possède ni votant
+- ne possède ni proposition de vote
+- ne possède ni résultat de vote
+- il est juste "*possédé*" par le **owner** qui l'a déployé
+- l'état initiale du Workflow est **RegisteringVoters**
+
+##### Extrait :
+```javascript
+it("Ownership", async () => {
+	expect( await voting.owner()).to.be.bignumber.equal( BN(OWNER));
+});
+
+it("Initial workflow status", async () => {
+	exceptDefinedStatus( voting, RegisteringVoters);
+});
+
+it("No voter", async () => {
 	await expectRevert(
-		voting.getVoter(_owner),
+		voting.getVoter(OWNER, {from: OWNER}),
 		"You're not a voter"
 	);
 
 	await expectRevert(
-		voting.getVoter(_voter1),
+		voting.getVoter(VOTER_1, {from: OWNER}),
 		"You're not a voter"
 	);
 
-	// No proposal, so no access to getOneProposal()
+});
 
-	// result
+it("No proposal", async () => {
+	// No registered voter, so no access to getOneProposal()
 	await expectRevert(
-		voting.tallyVotes(),
+		voting.getOneProposal(0, {from: OWNER}),
+		"You're not a voter"
+	);
+	await expectRevert(
+		voting.getOneProposal(0, {from: VOTER_1}),
+		"You're not a voter"
+	);
+
+});
+
+it("No result", async () => {
+
+	// No result !
+	await expectRevert(
+		voting.tallyVotes( {from: OWNER}),
 		"Current status is not voting session ended"
 	);
+
+	let winningProposalID = (await voting.winningProposalID( {from: OWNER}));
+	expect(winningProposalID).to.be.bignumber.equal(BN(0));
 
 });
 ```
 
 
-## Évolution du processus de vote
+### Évolution du processus de vote
+
 Le déroulement du processus de vote, se fait dans une ordre bien défini, de *RegisteringVoters* vers *VotesTallied* (voir tableau plus bas) un **revert** se porduit en cas de mauvais enchainement d'états.
 
 Des **events** précis sont émis lors du changement d'étape.
 
-#### Les étapes du déroulement du vote sont les suivantes :
+##### Les étapes du déroulement du vote sont les suivantes :
 
 | WorkflowStatus               | Descriptions                 |
 | ---------------------------- | ---------------------------- |
@@ -73,14 +193,14 @@ Des **events** précis sont émis lors du changement d'étape.
 | VotingSessionEnded           | Le vote est clos             |
 | VotesTallied                 | Le dépouillement est fait    |
 
-#### Extrait #1 :
+##### Extrait #1 :
 ```javascript
 await expectRevert(
 	voting.endVotingSession(),
 	"Voting session havent started yet"
 );
 ```
-#### Extrait #2 :
+##### Extrait #2 :
 ```javascript
 expectEvent(
 	await voting.startProposalsRegistering(),
@@ -92,46 +212,13 @@ expectEvent(
 ```
 
 
-## onlyVoters
-Concernant les vecteurs d'états **onlyVoters** l'accès aux fonctions *getVoter()* et *getOneProposal()* sont testables sans condition particulière.
+### onlyOwner
 
-*addProposal()* et *setVote()* nécessite par contre des états particuliers pour être testés plus profondément.
-
-#### Extrait :
-```javascript
-expectEvent(
-	await voting.setVote( BN(1), {from: _voter1}),
-	"Voted", {
-		voter: _voter1,
-		proposalId: BN(1)
-	}
-);
-
-await expectRevert(
-	voting.setVote( BN(1), {from: _voter2}),
-	"You're not a voter"
-);
-```
+Les fonctions en accès onlyOwner sont pour la grosse majorité liées à l'évolution de processus de vote, à l'exception de **addVoter()**.
+**TODO**
 
 
-#### Accès aux fonctions concernées par le modifier **onlyVoters** :
-
-| WorkflowStatus               | getVoter | getOneProposal | addProposal | setVote |
-| ---------------------------- | -------- | -------------- | ----------- | ------- |
-| RegisteringVoters            | ✅       | ✅             |             |         |
-| ProposalsRegistrationStarted | ✅       | ✅             | ✅          |         |
-| ProposalsRegistrationEnded   | ✅       | ✅             |             |         |
-| VotingSessionStarted         | ✅       | ✅             |             | ✅      |
-| VotingSessionEnded           | ✅       | ✅             |             |         |
-| VotesTallied                 | ✅       | ✅             |             |         |
-
-
-## onlyOwner
-
-
-
-
-#### Accès aux fonctions concernées par le modifier **onlyOwner** :
+##### Accès aux fonctions concernées par le modifier **onlyOwner** :
 
 | WorkflowStatus               | addVoter | startProposalsRegistering | endProposalsRegistering | startVotingSession | endVotingSession | tallyVotes |
 | ---------------------------- | -------- | ------------------------- | ----------------------- | ------------------ | ---------------- | ---------- |
@@ -144,39 +231,94 @@ await expectRevert(
 
 
 
-#### Extrait :
+##### Extrait :
 ```javascript
-it("onlyOwner functions : check access if not owner", async () => {
+it("If not owner", async () => {
 
 	await expectRevert(
-		voting.addVoter( _voter3, {from: _voter1}),
+		voting.addVoter( VOTER_3, {from: VOTER_1}),
 		"caller is not the owner"
 	);
 	
 	await expectRevert(
-		voting.startProposalsRegistering( {from: _voter1}),
+		voting.startProposalsRegistering( {from: VOTER_1}),
 		"caller is not the owner"
 	);
 
 	await expectRevert(
-		voting.endProposalsRegistering( {from: _voter1}),
+		voting.endProposalsRegistering( {from: VOTER_1}),
 		"caller is not the owner"
 	);
 
 	await expectRevert(
-		voting.startVotingSession( {from: _voter1}),
+		voting.startVotingSession( {from: VOTER_1}),
 		"caller is not the owner"
 	);
 
 	await expectRevert(
-		voting.endVotingSession( {from: _voter1}),
+		voting.endVotingSession( {from: VOTER_1}),
 		"caller is not the owner"
 	);
 
 	await expectRevert(
-		voting.tallyVotes( {from: _voter1}),
+		voting.tallyVotes( {from: VOTER_1}),
 		"caller is not the owner"
 	);
 
 });
+
+
+it("If owner", async () => {
+	await expectAddNewVoter( voting, VOTER_1, OWNER);
+	await expectStatusScheduling( voting);	
+});
 ```
+
+
+### onlyVoters
+
+Concernant le vecteur d'états **onlyVoters**, l'accès aux fonctions *getVoter()* et *getOneProposal()* sont testables sans condition particulière.
+
+*addProposal()* et *setVote()* nécessite par contre des états particuliers pour être testés plus profondément.
+
+
+##### Accès aux fonctions concernées par le modifier **onlyVoters** :
+
+| WorkflowStatus               | getVoter | getOneProposal | addProposal | setVote |
+| ---------------------------- | -------- | -------------- | ----------- | ------- |
+| RegisteringVoters            | ✅       | ✅             |             |         |
+| ProposalsRegistrationStarted | ✅       | ✅             | ✅          |         |
+| ProposalsRegistrationEnded   | ✅       | ✅             |             |         |
+| VotingSessionStarted         | ✅       | ✅             |             | ✅      |
+| VotingSessionEnded           | ✅       | ✅             |             |         |
+| VotesTallied                 | ✅       | ✅             |             |         |
+
+
+##### Extrait :
+```javascript
+expectEvent(
+	await voting.setVote( INDEX_PROPOSAL_1, {from: VOTER_1}),
+	"Voted", {
+		voter: VOTER_1,
+		proposalId: INDEX_PROPOSAL_1
+	}
+);
+
+// voter2 attempt to vote, and fail
+await expectRevert(
+	voting.setVote( INDEX_PROPOSAL_1, {from: VOTER_2}),
+	"You're not a voter"
+);
+```
+
+### Truffle
+
+Le test du code a été réalisé l'aide des outils :
+- **Truffle** : [https://trufflesuite.com/](https://trufflesuite.com/)
+- **Ganache** : [https://trufflesuite.com/ganache/](https://trufflesuite.com/ganache/)
+
+
+
+##### Résultat :
+
+![](2023-06-11-09-58-14.png)

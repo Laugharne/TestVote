@@ -74,10 +74,9 @@ contract("Voting", accounts => {
 				voting.tallyVotes( {from: OWNER}),
 				"Current status is not voting session ended"
 			);
-			//revertStatusChange("Current status is not voting session ended", await voting.tallyVotes( {from: OWNER}));
 
 			let winningProposalID = (await voting.winningProposalID( {from: OWNER}));
-			await expect(winningProposalID).to.be.bignumber.equal(BN(0));
+			expect(winningProposalID).to.be.bignumber.equal(BN(0));
 
 		});
 
@@ -92,12 +91,12 @@ contract("Voting", accounts => {
 	
 
 		it("Chronological order", async () => {
-			await checkStatusScheduling( voting);
+			await expectStatusScheduling( voting);
 		});
 
 		it("Revert order", async () => {
 
-			await checkStatusScheduling( voting);
+			await expectStatusScheduling( voting);
 
 			await expectRevert(
 				voting.tallyVotes({from: OWNER}),
@@ -172,7 +171,7 @@ contract("Voting", accounts => {
 
 		it("If owner", async () => {
 			await expectAddNewVoter( voting, VOTER_1, OWNER);
-			await checkStatusScheduling( voting);	
+			await expectStatusScheduling( voting);	
 		});
 	
 	});
@@ -401,20 +400,10 @@ async function checkGetVoterAndGetProposal( voting, registeredVoter, unregistere
 }
 
 
-/**
- * Proceed to an evolution of the workflow status in
- * chronological order from "RegisteringVoters" to "VotesTallied"
- * and check events emitted
- * 
- * @param any voting 
- */
-async function checkStatusScheduling( voting) {
 
-	expectStatusChangeOk( voting, RegisteringVoters, ProposalsRegistrationStarted, await voting.startProposalsRegistering()) ;
-	expectStatusChangeOk( voting, ProposalsRegistrationStarted, ProposalsRegistrationEnded, await voting.endProposalsRegistering()) ;
-	expectStatusChangeOk( voting, ProposalsRegistrationEnded, VotingSessionStarted, await voting.startVotingSession()) ;
-	expectStatusChangeOk( voting, VotingSessionStarted, VotingSessionEnded, await voting.endVotingSession()) ;
-	expectStatusChangeOk( voting, VotingSessionEnded, VotesTallied, await voting.tallyVotes()) ;
+async function exceptDefinedStatus( _voting, _status) {
+	workflowStatus = (await _voting.workflowStatus());
+	expect(workflowStatus).to.be.bignumber.equal(_status);
 }
 
 async function expectStatusChangeOk( _voting, _prevStatus, _newStatus, _func) {
@@ -428,16 +417,27 @@ async function expectStatusChangeOk( _voting, _prevStatus, _newStatus, _func) {
 	exceptDefinedStatus( _voting, _newStatus);
 }
 
+/**
+ * Proceed to an evolution of the workflow status in
+ * chronological order from "RegisteringVoters" to "VotesTallied",
+ * check events emitted and status after evolution
+ * 
+ * @param any voting 
+ */
+async function expectStatusScheduling( _voting) {
+
+	expectStatusChangeOk( _voting, RegisteringVoters, ProposalsRegistrationStarted, await _voting.startProposalsRegistering()) ;
+	expectStatusChangeOk( _voting, ProposalsRegistrationStarted, ProposalsRegistrationEnded, await _voting.endProposalsRegistering()) ;
+	expectStatusChangeOk( _voting, ProposalsRegistrationEnded, VotingSessionStarted, await _voting.startVotingSession()) ;
+	expectStatusChangeOk( _voting, VotingSessionStarted, VotingSessionEnded, await _voting.endVotingSession()) ;
+	expectStatusChangeOk( _voting, VotingSessionEnded, VotesTallied, await _voting.tallyVotes()) ;
+}
+
 async function revertStatusChange( _message, _func) {
 	await expectRevert(
 		_func,
 		_message
 	);
-}
-
-async function exceptDefinedStatus( _voting, _status) {
-	workflowStatus = (await _voting.workflowStatus());
-	expect(workflowStatus).to.be.bignumber.equal(_status);
 }
 
 async function expectAddNewVoter( _voting, _address, _owner) {
@@ -447,7 +447,7 @@ async function expectAddNewVoter( _voting, _address, _owner) {
 		{voterAddress: _address}
 	);
 
-	voterStruct = await _voting.getVoter(_address, {from: _address});
+	voterStruct = await _voting.getVoter( _address, {from: _address});
 	expect(voterStruct.isRegistered).to.be.true;
 	expect(voterStruct.hasVoted).to.be.false;
 	expect(voterStruct.votedProposalId).to.be.bignumber.equal( BN(0));
