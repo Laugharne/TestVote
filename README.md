@@ -3,7 +3,7 @@
 ### Enoncé
 
 
-Oui oui, nous allons repartir du défi “Système de vote” ! 
+Oui, nous allons repartir du défi “Système de vote” ! 
 
 Vous repartirez du smart contract proposé en correction 
 
@@ -42,7 +42,7 @@ const VotesTallied                 = BN(5);
 
 Les différentes adresses utilisées dans le script de test, sont aussi définies de manière explicites.
 
-#### Extrait :
+##### Extrait :
 
 ```javascript
 const OWNER   = accounts[0];
@@ -63,7 +63,7 @@ const NN_VOTE               = BN(2);
 ```
 
 
-### Les différents vecteurs d'états
+### Les différents vecteurs d'états & variables
 
 On peut noter les principaux **vecteurs d'états** dans le code du fichier source "*Voting.sol*"
 
@@ -95,7 +95,7 @@ Des fonctions ont été également réalisées afin de "regrouper" des contrôle
   - expectStatusChangeOk()
   - expectStatusScheduling()
   
-- L'**ajout d'un votant** :
+- L'**ajout d'un votant** légitime :
   - expectAddNewVoter
 
 - Une fonction "*couteau suisse*" **checkGetVoterAndGetProposal()** éffectuant des contrôles sur un votant et la proposition votée, selon :
@@ -202,9 +202,9 @@ it("No result", async () => {
 
 ### Évolution du processus de vote
 
-Le déroulement du processus de vote, se fait dans une ordre bien défini, de *RegisteringVoters* vers *VotesTallied* (voir tableau plus bas) un **revert** se porduit en cas de mauvais enchainement d'états.
+Le déroulement du processus de vote, se fait dans une ordre bien défini, de *RegisteringVoters* vers *VotesTallied* (voir tableau plus bas) un **revert** se produit en cas de mauvais enchainement d'états.
 
-Des **events** précis sont émis lors du changement d'étape.
+Des **events** précis sont émis lors des changements d'étape.
 
 ##### Les étapes du déroulement du vote sont les suivantes :
 
@@ -216,6 +216,7 @@ Des **events** précis sont émis lors du changement d'étape.
 | VotingSessionStarted         | Le vote est commencé         |
 | VotingSessionEnded           | Le vote est clos             |
 | VotesTallied                 | Le dépouillement est fait    |
+
 
 ##### Extrait #1 :
 ```javascript
@@ -251,7 +252,6 @@ Les fonctions en accès onlyOwner sont pour la grosse majorité liées à l'évo
 | VotingSessionStarted         |          |                           |                         |                    | ✅               |            |
 | VotingSessionEnded           |          |                           |                         |                    |                  | ✅         |
 | VotesTallied                 |          |                           |                         |                    |                  |            |
-
 
 
 ##### Extrait :
@@ -334,7 +334,7 @@ await expectRevert(
 );
 ```
 
-### Vote processing :
+### Processus de vote :
 
 ##### Scénario :
 - Deux votants (d'adresse **VOTER_1** et **VOTER_3**) sont ajoutés à la session de vote.
@@ -358,8 +358,8 @@ Le test du code a été réalisé l'aide des outils suivant :
 - **Ganache** : [https://trufflesuite.com/ganache/](https://trufflesuite.com/ganache/)
 - **eth-gas-reporter** : [https://www.npmjs.com/package/eth-gas-reporter](https://www.npmjs.com/package/eth-gas-reporter)
 
-**Versions des outils**
-```
+##### Versions des outils :
+```bash
 Truffle v5.9.2 (core: 5.9.2)
 Ganache v7.8.0
 Solidity - 0.8.13 (solc-js)
