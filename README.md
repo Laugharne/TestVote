@@ -185,7 +185,7 @@ async function expectAddNewVoter( _voting, _address, _owner) {
 Au déploiement du **contrat**, celui-ci : 
 - ne possède ni votant
 - ne possède ni proposition de vote
-- ne possède ni résultat de vote
+- ne possède aucun résultat de vote
 - il est juste "*possédé*" par le **owner** qui l'a déployé
 - l'état initiale du Workflow est **RegisteringVoters**
 
