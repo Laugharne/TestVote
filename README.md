@@ -1,4 +1,39 @@
-## Projet #2 - Système de vote (test unit)
+<!-- TOC -->
+
+- [Projet #2 - Système de vote test unit](#projet-2---syst%C3%A8me-de-vote-test-unit)
+		- [Enoncé](#enonc%C3%A9)
+				- [Lien énoncé :](#lien-%C3%A9nonc%C3%A9-)
+				- [Smart contract proposé :](#smart-contract-propos%C3%A9-)
+		- [Constantes](#constantes)
+				- [Extrait #1 :](#extrait-1-)
+				- [Extrait #2 :](#extrait-2-)
+				- [Extrait #3 :](#extrait-3-)
+		- [Les différents vecteurs d'états & variables](#les-diff%C3%A9rents-vecteurs-d%C3%A9tats--variables)
+				- [Extrait :](#extrait-)
+		- [Factorisation](#factorisation)
+				- [Extraits :](#extraits-)
+		- [Déploiement](#d%C3%A9ploiement)
+				- [Extrait :](#extrait-)
+		- [Évolution du processus de vote](#%C3%A9volution-du-processus-de-vote)
+				- [Les étapes du déroulement du vote sont les suivantes :](#les-%C3%A9tapes-du-d%C3%A9roulement-du-vote-sont-les-suivantes-)
+				- [Extrait #1 :](#extrait-1-)
+				- [Extrait #2 :](#extrait-2-)
+		- [onlyOwner](#onlyowner)
+				- [Accès aux fonctions concernées par le modifier **onlyOwner** :](#acc%C3%A8s-aux-fonctions-concern%C3%A9es-par-le-modifier-onlyowner-)
+				- [Extrait :](#extrait-)
+		- [onlyVoters](#onlyvoters)
+				- [Accès aux fonctions concernées par le modifier **onlyVoters** :](#acc%C3%A8s-aux-fonctions-concern%C3%A9es-par-le-modifier-onlyvoters-)
+				- [Extrait :](#extrait-)
+		- [Processus de vote :](#processus-de-vote-)
+				- [Scénario :](#sc%C3%A9nario-)
+		- [Tests avec **Truffle**](#tests-avec-truffle)
+				- [Versions des outils :](#versions-des-outils-)
+				- [Résultat :](#r%C3%A9sultat-)
+
+<!-- /TOC -->
+
+# Projet #2 - Système de vote (test unit)
+
 
 
 ### Enoncé
@@ -21,7 +56,7 @@ A rendre :
 ##### Lien énoncé :
 [https://formation.alyra.fr/products/developpeur-blockchain/categories/2149101531/posts/2153206159](https://formation.alyra.fr/products/developpeur-blockchain/categories/2149101531/posts/2153206159)
 
-##### Script initial :
+##### Smart contract proposé :
 [https://github.com/BenBktech/Promo-Buterin/blob/main/1.Solidity/Voting.sol](https://github.com/BenBktech/Promo-Buterin/blob/main/1.Solidity/Voting.sol)
 
 
@@ -306,7 +341,7 @@ it("If owner", async () => {
 
 Concernant le vecteur d'états **onlyVoters**, l'accès aux fonctions *getVoter()* et *getOneProposal()* sont testables sans condition particulière autre que **onlyVoters**.
 
-*addProposal()* et *setVote()* nécessite par contre des états particuliers pour être testés plus profondément, états liés au déroulement du processus de vote (*WorkflowStatus*).
+*addProposal()* et *setVote()* nécessite par contre des états particuliers, pour être testés plus profondément. États liés au déroulement du processus de vote (*WorkflowStatus*).
 
 
 ##### Accès aux fonctions concernées par le modifier **onlyVoters** :
@@ -341,7 +376,7 @@ await expectRevert(
 ### Processus de vote :
 
 ##### Scénario :
-- Deux votants (d'adresse **VOTER_1** et **VOTER_3**) sont ajoutés à la session de vote.
+- Deux votants (d'adresses **VOTER_1** et **VOTER_3**) sont ajoutés à la session de vote.
 - La période de proposition est ouverte, tandis que l'ajout de votant est clot.
 - **VOTER_1** fait une proposition de vote (proposition #1, indice 1), La proposition d'indice 0 étant la **GENESIS** depuis l'ouverture des propostions.
 - **VOTER_1** fait à nouveau une proposition de vote, en vain.
