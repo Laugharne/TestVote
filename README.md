@@ -1,38 +1,39 @@
-<!-- TOC -->
-
-- [Projet #2 - Système de vote test unit](#projet-2---syst%C3%A8me-de-vote-test-unit)
-		- [Enoncé](#enonc%C3%A9)
-				- [Lien énoncé :](#lien-%C3%A9nonc%C3%A9-)
-				- [Smart contract proposé :](#smart-contract-propos%C3%A9-)
-		- [Constantes](#constantes)
-				- [Extrait #1 :](#extrait-1-)
-				- [Extrait #2 :](#extrait-2-)
-				- [Extrait #3 :](#extrait-3-)
-		- [Les différents vecteurs d'états & variables](#les-diff%C3%A9rents-vecteurs-d%C3%A9tats--variables)
-				- [Extrait :](#extrait-)
-		- [Factorisation](#factorisation)
-				- [Extraits :](#extraits-)
-		- [Déploiement](#d%C3%A9ploiement)
-				- [Extrait :](#extrait-)
-		- [Évolution du processus de vote](#%C3%A9volution-du-processus-de-vote)
-				- [Les étapes du déroulement du vote sont les suivantes :](#les-%C3%A9tapes-du-d%C3%A9roulement-du-vote-sont-les-suivantes-)
-				- [Extrait #1 :](#extrait-1-)
-				- [Extrait #2 :](#extrait-2-)
-		- [onlyOwner](#onlyowner)
-				- [Accès aux fonctions concernées par le modifier **onlyOwner** :](#acc%C3%A8s-aux-fonctions-concern%C3%A9es-par-le-modifier-onlyowner-)
-				- [Extrait :](#extrait-)
-		- [onlyVoters](#onlyvoters)
-				- [Accès aux fonctions concernées par le modifier **onlyVoters** :](#acc%C3%A8s-aux-fonctions-concern%C3%A9es-par-le-modifier-onlyvoters-)
-				- [Extrait :](#extrait-)
-		- [Processus de vote :](#processus-de-vote-)
-				- [Scénario :](#sc%C3%A9nario-)
-		- [Tests avec **Truffle**](#tests-avec-truffle)
-				- [Versions des outils :](#versions-des-outils-)
-				- [Résultat :](#r%C3%A9sultat-)
-
-<!-- /TOC -->
 
 # Projet #2 - Système de vote (test unit)
+
+## Sommaire
+
+
+- [Projet #2 - Système de vote test unit](#projet-2---syst%C3%A8me-de-vote-test-unit)
+	- [Sommaire](#sommaire)
+		- [Enoncé](#enonc%C3%A9)
+			- [Lien énoncé](#lien-%C3%A9nonc%C3%A9)
+			- [Smart contract proposé](#smart-contract-propos%C3%A9)
+		- [Constantes](#constantes)
+			- [Extrait #1](#extrait-1)
+			- [Extrait #2](#extrait-2)
+			- [Extrait #3](#extrait-3)
+		- [Les différents vecteurs d'états & variables](#les-diff%C3%A9rents-vecteurs-d%C3%A9tats--variables)
+			- [Extrait](#extrait)
+		- [Factorisation](#factorisation)
+			- [Extraits](#extraits)
+		- [Déploiement](#d%C3%A9ploiement)
+			- [Extrait](#extrait)
+		- [Évolution du processus de vote](#%C3%A9volution-du-processus-de-vote)
+			- [Les étapes du déroulement du vote sont les suivantes](#les-%C3%A9tapes-du-d%C3%A9roulement-du-vote-sont-les-suivantes)
+			- [Extrait #1](#extrait-1)
+			- [Extrait #2](#extrait-2)
+		- [onlyOwner](#onlyowner)
+			- [Accès aux fonctions concernées par le modifier **onlyOwner** :](#acc%C3%A8s-aux-fonctions-concern%C3%A9es-par-le-modifier-onlyowner-)
+			- [Extrait](#extrait)
+		- [onlyVoters](#onlyvoters)
+			- [Accès aux fonctions concernées par le modifier **onlyVoters**](#acc%C3%A8s-aux-fonctions-concern%C3%A9es-par-le-modifier-onlyvoters)
+			- [Extrait](#extrait)
+		- [Processus de vote](#processus-de-vote)
+			- [Scénario](#sc%C3%A9nario)
+		- [Tests avec **Truffle**](#tests-avec-truffle)
+			- [Versions des outils](#versions-des-outils)
+			- [Résultat](#r%C3%A9sultat)
 
 
 
@@ -53,10 +54,10 @@ A rendre :
 ```
 
 
-##### Lien énoncé :
+##### Lien énoncé
 [https://formation.alyra.fr/products/developpeur-blockchain/categories/2149101531/posts/2153206159](https://formation.alyra.fr/products/developpeur-blockchain/categories/2149101531/posts/2153206159)
 
-##### Smart contract proposé :
+##### Smart contract proposé
 [https://github.com/BenBktech/Promo-Buterin/blob/main/1.Solidity/Voting.sol](https://github.com/BenBktech/Promo-Buterin/blob/main/1.Solidity/Voting.sol)
 
 
@@ -67,7 +68,7 @@ Afin de gagner en lisibilité de lecture du script de test, différentes constan
 
 Les différents états du **Workflow** sont définis ainsi :
 
-##### Extrait #1 :
+##### Extrait #1
 
 ```javascript
 const RegisteringVoters            = BN(0);
@@ -80,7 +81,7 @@ const VotesTallied                 = BN(5);
 
 Les différentes adresses utilisées dans le script de test, sont aussi définies de manière explicites.
 
-##### Extrait #2 :
+##### Extrait #2
 
 ```javascript
 const OWNER   = accounts[0];
@@ -91,7 +92,7 @@ const VOTER_3 = accounts[3];
 
 De même que les différents indexs de proposition et autres constantes.
 
-##### Extrait #3 :
+##### Extrait #3
 
 ```javascript
 const INDEX_GENESIS         = BN(0);
@@ -117,7 +118,7 @@ Ainsi que les **variables** qui évoluent en fonctions du déroulement du proces
 
 Le cas **proposalsArray** est intéressant car à partir du passage à l'étape **ProposalsRegistrationStarted** du déroulement du processus de vote (workflow) il y a **au moins une** proposition - la proposition **GENESIS** - il y a donc un état testable !
 
-##### Extrait :
+##### Extrait
 ```javascript
 let proposalStruct = await voting.getOneProposal(0, {from: _voter1});
 assert.equal(proposalStruct.description, "GENESIS",  "Not GENESIS proposal");
@@ -141,7 +142,7 @@ Des fonctions ont été également réalisées afin de "*regrouper*" des contrô
   - Qu'un votant ait voté pour une proposition donnée
 
 
-##### Extraits :
+##### Extraits
 
 ```javascript
 async function exceptDefinedStatus( _voting, _status) {
@@ -187,7 +188,7 @@ Au déploiement du **contrat**, celui-ci :
 - il est juste "*possédé*" par le **owner** qui l'a déployé
 - l'état initiale du Workflow est **RegisteringVoters**
 
-##### Extrait :
+##### Extrait
 ```javascript
 it("Ownership", async () => {
 	expect( await voting.owner()).to.be.bignumber.equal( BN(OWNER));
@@ -245,7 +246,7 @@ Le déroulement du processus de vote, se fait dans une ordre bien défini, de *R
 Des events précis - **WorkflowStatusChange()** - sont émis lors des changements d'étape.
 
 
-##### Les étapes du déroulement du vote sont les suivantes :
+##### Les étapes du déroulement du vote sont les suivantes
 
 | WorkflowStatus               | Descriptions                 |
 | ---------------------------- | ---------------------------- |
@@ -257,7 +258,7 @@ Des events précis - **WorkflowStatusChange()** - sont émis lors des changement
 | VotesTallied                 | Le dépouillement est fait    |
 
 
-##### Extrait #1 :
+##### Extrait #1
 ```javascript
 expectEvent(
 	await voting.startProposalsRegistering(),
@@ -267,7 +268,7 @@ expectEvent(
 	}
 );
 ```
-##### Extrait #2 :
+##### Extrait #2
 ```javascript
 await expectRevert(
 	voting.endVotingSession(),
@@ -293,7 +294,7 @@ Les fonctions en accès onlyOwner sont pour la grosse majorité liées à l'évo
 | VotesTallied                 |          |                           |                         |                    |                  |            |
 
 
-##### Extrait :
+##### Extrait
 ```javascript
 it("If not owner", async () => {
 
@@ -344,7 +345,7 @@ Concernant le vecteur d'états **onlyVoters**, l'accès aux fonctions *getVoter(
 *addProposal()* et *setVote()* nécessite par contre des états particuliers, pour être testés plus profondément. États liés au déroulement du processus de vote (*WorkflowStatus*).
 
 
-##### Accès aux fonctions concernées par le modifier **onlyVoters** :
+##### Accès aux fonctions concernées par le modifier **onlyVoters**
 
 | WorkflowStatus               | getVoter | getOneProposal | addProposal | setVote |
 | ---------------------------- | -------- | -------------- | ----------- | ------- |
@@ -356,7 +357,7 @@ Concernant le vecteur d'états **onlyVoters**, l'accès aux fonctions *getVoter(
 | VotesTallied                 | ✅       | ✅             |             |         |
 
 
-##### Extrait :
+##### Extrait
 ```javascript
 expectEvent(
 	await voting.setVote( INDEX_PROPOSAL_1, {from: VOTER_1}),
@@ -373,9 +374,9 @@ await expectRevert(
 );
 ```
 
-### Processus de vote :
+### Processus de vote
 
-##### Scénario :
+##### Scénario
 - Deux votants (d'adresses **VOTER_1** et **VOTER_3**) sont ajoutés à la session de vote.
 - La période de proposition est ouverte, tandis que l'ajout de votant est clot.
 - **VOTER_1** fait une proposition de vote (proposition #1, indice 1), La proposition d'indice 0 étant la **GENESIS** depuis l'ouverture des propostions.
@@ -400,7 +401,7 @@ Le test du code a été réalisé l'aide des outils suivant :
 - eth-gas-reporter : [https://www.npmjs.com/package/eth-gas-reporter](https://www.npmjs.com/package/eth-gas-reporter)
 
 
-##### Versions des outils :
+##### Versions des outils
 ```bash
 Truffle v5.9.2 (core: 5.9.2)
 Ganache v7.8.0
@@ -409,6 +410,6 @@ Node v18.16.0
 Web3.js v1.10.0
 ```
 
-##### Résultat :
+##### Résultat
 
 ![](2023-06-11-16-41-18.png)
