@@ -1,8 +1,9 @@
 ## Projet #2 - Système de vote (test unit)
 
+
 ### Enoncé
 
-
+```txt
 Oui, nous allons repartir du défi “Système de vote” ! 
 
 Vous repartirez du smart contract proposé en correction 
@@ -11,15 +12,17 @@ Depuis la dernière version, vous avez vu la partie CI/CD avec les tests et le d
 
 Vous devez alors fournir les tests unitaires de votre smart contract Nous n’attendons pas une couverture à 100% du smart contract mais veillez à bien tester les différentes possibilités de retours (event, revert).
 
-**A rendre :**
+A rendre :
 
 - votre lien Github (tests et explication rapide de ce qui a été fait dans un readme.md
+```
 
 
+##### Lien énoncé :
+[https://formation.alyra.fr/products/developpeur-blockchain/categories/2149101531/posts/2153206159](https://formation.alyra.fr/products/developpeur-blockchain/categories/2149101531/posts/2153206159)
 
-**Lien énoncé :** [https://formation.alyra.fr/products/developpeur-blockchain/categories/2149101531/posts/2153206159](https://formation.alyra.fr/products/developpeur-blockchain/categories/2149101531/posts/2153206159)
-
-**Script initial :** [https://github.com/BenBktech/Promo-Buterin/blob/main/1.Solidity/Voting.sol](https://github.com/BenBktech/Promo-Buterin/blob/main/1.Solidity/Voting.sol)
+##### Script initial :
+[https://github.com/BenBktech/Promo-Buterin/blob/main/1.Solidity/Voting.sol](https://github.com/BenBktech/Promo-Buterin/blob/main/1.Solidity/Voting.sol)
 
 
 
@@ -29,7 +32,7 @@ Afin de gagner en lisibilité de lecture du script de test, différentes constan
 
 Les différents états du **Workflow** sont définis ainsi :
 
-##### Extrait :
+##### Extrait #1 :
 
 ```javascript
 const RegisteringVoters            = BN(0);
@@ -42,7 +45,7 @@ const VotesTallied                 = BN(5);
 
 Les différentes adresses utilisées dans le script de test, sont aussi définies de manière explicites.
 
-##### Extrait :
+##### Extrait #2 :
 
 ```javascript
 const OWNER   = accounts[0];
@@ -53,7 +56,7 @@ const VOTER_3 = accounts[3];
 
 Ainsi que différents indexs de proposition et autre constante.
 
-##### Extrait :
+##### Extrait #3 :
 
 ```javascript
 const INDEX_GENESIS         = BN(0);
@@ -300,9 +303,9 @@ it("If owner", async () => {
 
 ### onlyVoters
 
-Concernant le vecteur d'états **onlyVoters**, l'accès aux fonctions *getVoter()* et *getOneProposal()* sont testables sans condition particulière.
+Concernant le vecteur d'états **onlyVoters**, l'accès aux fonctions *getVoter()* et *getOneProposal()* sont testables sans condition particulière autre que **onlyVoters**.
 
-*addProposal()* et *setVote()* nécessite par contre des états particuliers pour être testés plus profondément.
+*addProposal()* et *setVote()* nécessite par contre des états particuliers pour être testés plus profondément, états liés au déroulement du processus de vote (*WorkflowStatus*).
 
 
 ##### Accès aux fonctions concernées par le modifier **onlyVoters** :
