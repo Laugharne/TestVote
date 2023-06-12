@@ -54,7 +54,7 @@ const VOTER_2 = accounts[2];
 const VOTER_3 = accounts[3];
 ```
 
-Ainsi que différents indexs de proposition et autre constante.
+De même que les différents indexs de proposition et autres constantes.
 
 ##### Extrait #3 :
 
@@ -80,7 +80,7 @@ Ainsi que les **variables** qui évoluent en fonctions du déroulement du proces
 - proposalsArray
 - voters
 
-Le cas **proposalsArray** est intéressant car à partir du passage à l'étape **ProposalsRegistrationStarted** du déroulement du processus de vote (workflow) il y a au moins **une** proposition, la proposition **GENESIS**, il y a donc un état testable !
+Le cas **proposalsArray** est intéressant car à partir du passage à l'étape **ProposalsRegistrationStarted** du déroulement du processus de vote (workflow) il y a **au moins une** proposition - la proposition **GENESIS** - il y a donc un état testable !
 
 ##### Extrait :
 ```javascript
@@ -91,7 +91,7 @@ assert.equal(proposalStruct.description, "GENESIS",  "Not GENESIS proposal");
 
 ### Factorisation
 
-Des fonctions ont été également réalisées afin de "regrouper" des contrôles multiples autour de certaines fonctionalités ou processus comme :
+Des fonctions ont été également réalisées afin de "*regrouper*" des contrôles multiples autour de certaines fonctionalités ou processus comme :
 
 - Les changements d'état dans l'**évolution du processus de vote**.
   - exceptDefinedStatus()
@@ -207,7 +207,8 @@ it("No result", async () => {
 
 Le déroulement du processus de vote, se fait dans une ordre bien défini, de *RegisteringVoters* vers *VotesTallied* (voir tableau plus bas) un **revert** se produit en cas de mauvais enchainement d'états.
 
-Des **events** précis sont émis lors des changements d'étape.
+Des events précis - **WorkflowStatusChange()** - sont émis lors des changements d'étape.
+
 
 ##### Les étapes du déroulement du vote sont les suivantes :
 
@@ -354,12 +355,15 @@ await expectRevert(
 - Après cloture des votes, le dépouillement est lancé.
 - Le proposition **gagnante** est la **proposition #1** (d'indice 1) avec **2 votes**
 
-### Truffle
+
+### Tests avec **Truffle**
 
 Le test du code a été réalisé l'aide des outils suivant :
 - **Truffle** : [https://trufflesuite.com/](https://trufflesuite.com/)
 - **Ganache** : [https://trufflesuite.com/ganache/](https://trufflesuite.com/ganache/)
-- **eth-gas-reporter** : [https://www.npmjs.com/package/eth-gas-reporter](https://www.npmjs.com/package/eth-gas-reporter)
+
+- eth-gas-reporter : [https://www.npmjs.com/package/eth-gas-reporter](https://www.npmjs.com/package/eth-gas-reporter)
+
 
 ##### Versions des outils :
 ```bash
