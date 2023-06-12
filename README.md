@@ -4,11 +4,13 @@
 ## Sommaire
 
 
+
 - [Projet #2 - Système de vote test unit](#projet-2---syst%C3%A8me-de-vote-test-unit)
 	- [Sommaire](#sommaire)
 		- [Enoncé](#enonc%C3%A9)
 			- [Lien énoncé](#lien-%C3%A9nonc%C3%A9)
 			- [Smart contract proposé](#smart-contract-propos%C3%A9)
+	- [Explications](#explications)
 		- [Constantes](#constantes)
 			- [Extrait #1](#extrait-1)
 			- [Extrait #2](#extrait-2)
@@ -61,6 +63,8 @@ A rendre :
 [https://github.com/BenBktech/Promo-Buterin/blob/main/1.Solidity/Voting.sol](https://github.com/BenBktech/Promo-Buterin/blob/main/1.Solidity/Voting.sol)
 
 
+
+## Explications
 
 ### Constantes
 
