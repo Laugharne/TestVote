@@ -128,7 +128,7 @@ assert.equal(proposalStruct.description, "GENESIS",  "Not GENESIS proposal");
 
 ### Factorisation
 
-Des fonctions ont été également réalisées afin de "*regrouper*" des contrôles multiples autour de certaines fonctionalités ou processus comme :
+Des fonctions ont été également réalisées afin de "*regrouper*" des contrôles multiples et systématiques autour de certaines fonctionalités ou processus comme :
 
 - Les changements d'état dans l'**évolution du processus de vote**.
   - exceptDefinedStatus()

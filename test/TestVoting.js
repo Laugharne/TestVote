@@ -400,7 +400,6 @@ async function checkGetVoterAndGetProposal( voting, registeredVoter, unregistere
 }
 
 
-
 async function exceptDefinedStatus( _voting, _status) {
 	workflowStatus = (await _voting.workflowStatus());
 	expect(workflowStatus).to.be.bignumber.equal(_status);
@@ -447,7 +446,7 @@ async function expectAddNewVoter( _voting, _address, _owner) {
 		{voterAddress: _address}
 	);
 
-	voterStruct = await _voting.getVoter( _address, {from: _address});
+	let voterStruct = await _voting.getVoter( _address, {from: _address});
 	expect(voterStruct.isRegistered).to.be.true;
 	expect(voterStruct.hasVoted).to.be.false;
 	expect(voterStruct.votedProposalId).to.be.bignumber.equal( BN(0));
