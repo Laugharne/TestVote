@@ -4,7 +4,6 @@
 ## Sommaire
 
 
-
 - [Projet #2 - Système de vote test unit](#projet-2---syst%C3%A8me-de-vote-test-unit)
 	- [Sommaire](#sommaire)
 		- [Enoncé](#enonc%C3%A9)
@@ -41,7 +40,6 @@
 
 ### Enoncé
 
-```txt
 Oui, nous allons repartir du défi “Système de vote” ! 
 
 Vous repartirez du smart contract proposé en correction 
@@ -50,10 +48,9 @@ Depuis la dernière version, vous avez vu la partie CI/CD avec les tests et le d
 
 Vous devez alors fournir les tests unitaires de votre smart contract Nous n’attendons pas une couverture à 100% du smart contract mais veillez à bien tester les différentes possibilités de retours (event, revert).
 
-A rendre :
+**A rendre :**
 
-- votre lien Github (tests et explication rapide de ce qui a été fait dans un readme.md
-```
+- votre lien Github (tests et explication rapide de ce qui a été fait dans un **readme.md**)
 
 
 ##### Lien énoncé
